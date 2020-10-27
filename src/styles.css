@@ -1,0 +1,44 @@
+.App {
+  font-family: sans-serif;
+  text-align: center;
+  margin: 100px auto;
+  min-width: 425px;
+  max-width: 1000px;
+}
+
+.error {
+  color: red;
+}
+
+.App form {
+  display: flex;
+  flex-direction: column;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.App form > * {
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+
+.App .MuiTableCell-root {
+  border: 1px solid rgb(228, 235, 247);
+  padding: 6px 8px;
+  height: 34px;
+  overflow-wrap: break-word;
+}
+
+.App .MuiTableCell-head {
+  padding: 6px 8px;
+  height: 34px;
+  overflow-wrap: break-word;
+  background: rgb(225, 236, 253);
+  border: 1px solid rgb(168, 204, 255);
+  color: rgb(51, 121, 219);
+  font-size: 12px;
+  font-weight: 400;
+  letter-spacing: 1px;
+  text-align: center;
+  text-transform: uppercase;
+}
