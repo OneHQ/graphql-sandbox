@@ -17,16 +17,6 @@ const createAdvisor = `
       errors
       resource {
         id
-        addresses {
-          lineOne
-          lineTwo
-          city
-          state {
-            id
-            name
-          }
-          zipcode
-        }
         demographic {
           firstName
           lastName
@@ -100,7 +90,6 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
           onChange={handleChange}
         />
         <TextField name="email" label="Email" onChange={handleChange} />
-        <TextField name="Address" label="Address" onChange={handleChange} />
       </Form>
       <TableContainer>
         <Table>
@@ -111,7 +100,6 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
               <TableCell>Last Name</TableCell>
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
-              <TableCell>Address</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -135,21 +123,11 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
                   <TableCell>
                     {!!advisor.emails.length && advisor.emails[0].address}
                   </TableCell>
-                  <TableCell>
-                    {!!advisor.addresses.length &&
-                      [advisor.addresses[0].lineOne,
-                       advisor.addresses[0].lineTwo,
-                       advisor.addresses[0].city,
-                       advisor.addresses[0].state?.name,
-                       advisor.addresses[0].zipcode
-                     ].filter(el => el).join(", ")
-                    }
-                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
+                <TableCell colSpan={5} style={{ textAlign: "center" }}>
                   No advisors
                 </TableCell>
               </TableRow>
