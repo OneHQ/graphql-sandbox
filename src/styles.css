@@ -42,3 +42,12 @@
   text-align: center;
   text-transform: uppercase;
 }
+
+.AppHeader {
+  display: flow-root;
+  font-family: sans-serif;
+  text-align: center;
+  margin: 100px auto;
+  min-width: 425px;
+  max-width: 1000px;
+}

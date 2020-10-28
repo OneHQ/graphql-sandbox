@@ -8,28 +8,31 @@ import {
   TableCell,
   TableHead
 } from "@material-ui/core";
-import Form from "./Form";
-import TextField from "./TextField";
+import Form from "../../Form";
+import TextField from "../../TextField";
 
-const fetchAdvisors = `
-  query LastNAdvisors($limit: Int!) {
-    advisors(limit: $limit) {
-      id
-      demographic {
-        firstName
-        lastName
-      }
-      emails {
-        address
-      }
-      phones {
-        number
+const createAdvisor = `
+  mutation CreateAdvisor($attributes: AdvisorInput!) {
+    createAdvisor(attributes: $attributes) {
+      errors
+      resource {
+        id
+        demographic {
+          firstName
+          lastName
+        }
+        emails {
+          address
+        }
+        phones {
+          number
+        }
       }
     }
   }
 `;
 
-export default function LastNAdvisors({ children, submitQuery }) {
+export default function LastNAdvisors({ children, onError, submitQuery }) {
   const [advisors, setAdvisors] = useState([]);
   const [data, setData] = useState({});
 
@@ -40,25 +43,53 @@ export default function LastNAdvisors({ children, submitQuery }) {
     <div>
       <Form
         onSubmit={async () => {
-          const response = await submitQuery(fetchAdvisors, {
-            variables: { limit: parseInt(data.limit, 10) }
+          const attributes = {
+            demographic: {
+              firstName: data.firstName,
+              lastName: data.lastName
+            }
+          };
+
+          if (data.phoneNumber) {
+            attributes.phones = [{ number: data.phoneNumber }];
+          }
+
+          if (data.email) {
+            attributes.emails = [{ address: data.email }];
+          }
+          const response = await submitQuery(createAdvisor, {
+            variables: {
+              attributes
+            }
           });
-          if (response) setAdvisors(response.advisors);
+          if (response) {
+            const errors = response.createAdvisor.errors;
+            const resource = response.createAdvisor.resource;
+            if (errors && Object.keys(errors).length) onError();
+            if (resource) setAdvisors((advisors) => [...advisors, resource]);
+          }
         }}
-        submitText={
-          data.limit
-            ? `Query the last ${data.limit} advisors`
-            : "Query advisors"
-        }
+        submitText="Create Advisor"
       >
         {children}
         <TextField
-          name="limit"
-          label="Limit"
+          name="firstName"
+          label="First Name"
           onChange={handleChange}
           required
-          type="number"
         />
+        <TextField
+          name="lastName"
+          label="Last Name"
+          onChange={handleChange}
+          required
+        />
+        <TextField
+          name="phoneNumber"
+          label="Phone Number"
+          onChange={handleChange}
+        />
+        <TextField name="email" label="Email" onChange={handleChange} />
       </Form>
       <TableContainer>
         <Table>
@@ -87,10 +118,10 @@ export default function LastNAdvisors({ children, submitQuery }) {
                   <TableCell>{advisor.demographic.firstName}</TableCell>
                   <TableCell>{advisor.demographic.lastName}</TableCell>
                   <TableCell>
-                    {advisor.phones.map((p) => p.number).join(", ")}
+                    {!!advisor.phones.length && advisor.phones[0].number}
                   </TableCell>
                   <TableCell>
-                    {advisor.emails.map((p) => p.address).join(", ")}
+                    {!!advisor.emails.length && advisor.emails[0].address}
                   </TableCell>
                 </TableRow>
               ))
