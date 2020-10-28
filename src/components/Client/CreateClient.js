@@ -8,12 +8,12 @@ import {
   TableCell,
   TableHead
 } from "@material-ui/core";
-import Form from "./Form";
-import TextField from "./TextField";
+import Form from "../../Form";
+import TextField from "../../TextField";
 
-const createAdvisor = `
-  mutation CreateAdvisor($attributes: AdvisorInput!) {
-    createAdvisor(attributes: $attributes) {
+const createClient = `
+  mutation CreateClient($attributes: ClientInput!) {
+    createClient(attributes: $attributes) {
       errors
       resource {
         id
@@ -32,8 +32,8 @@ const createAdvisor = `
   }
 `;
 
-export default function LastNAdvisors({ children, onError, submitQuery }) {
-  const [advisors, setAdvisors] = useState([]);
+export default function LastNClients({ children, onError, submitQuery }) {
+  const [clients, setClients] = useState([]);
   const [data, setData] = useState({});
 
   const handleChange = (name, value) =>
@@ -57,19 +57,19 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
           if (data.email) {
             attributes.emails = [{ address: data.email }];
           }
-          const response = await submitQuery(createAdvisor, {
+          const response = await submitQuery(createClient, {
             variables: {
               attributes
             }
           });
           if (response) {
-            const errors = response.createAdvisor.errors;
-            const resource = response.createAdvisor.resource;
+            const errors = response.createClient.errors;
+            const resource = response.createClient.resource;
             if (errors && Object.keys(errors).length) onError();
-            if (resource) setAdvisors((advisors) => [...advisors, resource]);
+            if (resource) setClients((clients) => [...clients, resource]);
           }
         }}
-        submitText="Create Advisor"
+        submitText="Create Client"
       >
         {children}
         <TextField
@@ -103,32 +103,32 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
             </TableRow>
           </TableHead>
           <TableBody>
-            {advisors.length ? (
-              advisors.map((advisor) => (
-                <TableRow key={advisor.id}>
+            {clients.length ? (
+              clients.map((client) => (
+                <TableRow key={client.id}>
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/advisors/${advisor.id}`}
+                      href={`https://www.agencieshq.com/clients/${client.id}`}
                     >
-                      {advisor.demographic.firstName}{" "}
-                      {advisor.demographic.lastName}
+                      {client.demographic.firstName}{" "}
+                      {client.demographic.lastName}
                     </Link>
                   </TableCell>
-                  <TableCell>{advisor.demographic.firstName}</TableCell>
-                  <TableCell>{advisor.demographic.lastName}</TableCell>
+                  <TableCell>{client.demographic.firstName}</TableCell>
+                  <TableCell>{client.demographic.lastName}</TableCell>
                   <TableCell>
-                    {!!advisor.phones.length && advisor.phones[0].number}
+                    {!!client.phones.length && client.phones[0].number}
                   </TableCell>
                   <TableCell>
-                    {!!advisor.emails.length && advisor.emails[0].address}
+                    {!!client.emails.length && client.emails[0].address}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
                 <TableCell colSpan={5} style={{ textAlign: "center" }}>
-                  No advisors
+                  No clients
                 </TableCell>
               </TableRow>
             )}

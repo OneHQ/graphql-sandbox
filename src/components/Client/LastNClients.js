@@ -8,13 +8,24 @@ import {
   TableCell,
   TableHead
 } from "@material-ui/core";
-import Form from "./Form";
-import TextField from "./TextField";
+import Form from "../../Form";
+import TextField from "../../TextField";
 
-const fetchAdvisors = `
-  query LastNAdvisors($limit: Int!) {
-    advisors(limit: $limit) {
+const fetchClients = `
+  query LastNClients($limit: Int!) {
+    clients(limit: $limit) {
       id
+      addresses {
+        id
+        lineOne
+        lineTwo
+        city
+        state {
+          id
+          name
+        }
+        zipcode
+      }
       demographic {
         firstName
         lastName
@@ -29,8 +40,8 @@ const fetchAdvisors = `
   }
 `;
 
-export default function LastNAdvisors({ children, submitQuery }) {
-  const [advisors, setAdvisors] = useState([]);
+export default function LastNClients({ children, submitQuery }) {
+  const [clients, setClients] = useState([]);
   const [data, setData] = useState({});
 
   const handleChange = (name, value) =>
@@ -40,15 +51,15 @@ export default function LastNAdvisors({ children, submitQuery }) {
     <div>
       <Form
         onSubmit={async () => {
-          const response = await submitQuery(fetchAdvisors, {
+          const response = await submitQuery(fetchClients, {
             variables: { limit: parseInt(data.limit, 10) }
           });
-          if (response) setAdvisors(response.advisors);
+          if (response) setClients(response.clients);
         }}
         submitText={
           data.limit
-            ? `Query the last ${data.limit} advisors`
-            : "Query advisors"
+            ? `Query the last ${data.limit} clients`
+            : "Query clients"
         }
       >
         {children}
@@ -69,35 +80,41 @@ export default function LastNAdvisors({ children, submitQuery }) {
               <TableCell>Last Name</TableCell>
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Address</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {advisors.length ? (
-              advisors.map((advisor) => (
-                <TableRow key={advisor.id}>
+            {clients.length ? (
+              clients.map((client) => (
+                <TableRow key={client.id}>
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/advisors/${advisor.id}`}
+                      href={`https://www.agencieshq.com/clients/${client.id}`}
                     >
-                      {advisor.demographic.firstName}{" "}
-                      {advisor.demographic.lastName}
+                      {client.demographic.firstName}{" "}
+                      {client.demographic.lastName}
                     </Link>
                   </TableCell>
-                  <TableCell>{advisor.demographic.firstName}</TableCell>
-                  <TableCell>{advisor.demographic.lastName}</TableCell>
+                  <TableCell>{client.demographic.firstName}</TableCell>
+                  <TableCell>{client.demographic.lastName}</TableCell>
                   <TableCell>
-                    {advisor.phones.map((p) => p.number).join(", ")}
+                    {client.phones.map((p) => p.number).join(", ")}
                   </TableCell>
                   <TableCell>
-                    {advisor.emails.map((p) => p.address).join(", ")}
+                    {client.emails.map((p) => p.address).join(", ")}
+                  </TableCell>
+                  <TableCell>
+                    {client.addresses.map((p) =>
+                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>)
+                    }
                   </TableCell>
                 </TableRow>
               ))
             ) : (
-              <TableRow>
-                <TableCell colSpan={5} style={{ textAlign: "center" }}>
-                  No advisors
+              <TableRow key="defaultRow">
+                <TableCell colSpan={6} style={{ textAlign: "center" }}>
+                  No clients
                 </TableCell>
               </TableRow>
             )}
