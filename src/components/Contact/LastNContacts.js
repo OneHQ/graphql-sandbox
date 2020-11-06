@@ -40,9 +40,11 @@ const fetchContacts = `
   }
 `;
 
-export default function LastNContacts({ children, submitQuery }) {
+export default function LastNContacts({ children, submitQuery, graphqlURL }) {
   const [contacts, setContacts] = useState([]);
   const [data, setData] = useState({});
+
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
@@ -90,7 +92,7 @@ export default function LastNContacts({ children, submitQuery }) {
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/contacts/${contact.id}`}
+                      href={`${url}/contacts/${contact.id}`}
                     >
                       {contact.demographic.firstName}{" "}
                       {contact.demographic.lastName}

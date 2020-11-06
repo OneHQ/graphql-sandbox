@@ -40,9 +40,12 @@ const fetchClients = `
   }
 `;
 
-export default function LastNClients({ children, submitQuery }) {
+export default function LastNClients({ children, submitQuery, graphqlURL }) {
   const [clients, setClients] = useState([]);
   const [data, setData] = useState({});
+
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
@@ -90,7 +93,7 @@ export default function LastNClients({ children, submitQuery }) {
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/clients/${client.id}`}
+                      href={`${url}/clients/${client.id}`}
                     >
                       {client.demographic.firstName}{" "}
                       {client.demographic.lastName}

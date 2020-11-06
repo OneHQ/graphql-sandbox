@@ -1,15 +1,29 @@
-import React, { useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect } from "react";
+import _orderBy from "lodash/orderBy"
 import {
+  Checkbox,
+  FormControl,
+  FormControlLabel,
+  Input,
+  InputLabel,
   Link,
+  ListItemText,
+  MenuItem,
+  Select,
   Table,
   TableBody,
   TableContainer,
   TableRow,
   TableCell,
-  TableHead
+  TableHead,
 } from "@material-ui/core";
+import Autocomplete from '@material-ui/lab/Autocomplete';
 import Form from "../../Form";
 import TextField from "../../TextField";
+import InlineFields from "../../InlineFields";
+import FieldsList from "../../helpers/FieldsList"
+import StatesList from "../../helpers/StatesList"
 
 const createAdvisor = `
   mutation CreateAdvisor($attributes: AdvisorInput!) {
@@ -17,6 +31,16 @@ const createAdvisor = `
       errors
       resource {
         id
+        addresses {
+          lineOne
+          lineTwo
+          city
+          state {
+            id
+            name
+          }
+          zipcode
+        }
         demographic {
           firstName
           lastName
@@ -32,12 +56,137 @@ const createAdvisor = `
   }
 `;
 
-export default function LastNAdvisors({ children, onError, submitQuery }) {
+
+export default function CreateAdvisor({ children, onError, submitQuery, apiKey, graphqlURL }) {
   const [advisors, setAdvisors] = useState([]);
   const [data, setData] = useState({});
+  const [dataFields, setDataFields] = useState({});
 
-  const handleChange = (name, value) =>
+  const [fieldsList, setFieldsList] = useState([]);
+  const [selectedFields, setSelectedFields] = useState([]);
+  const [inlineFields, setInlineFields] = useState([]);
+
+  const [statesList, setStatesList] = useState([]);
+
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+
+  useEffect(() => {
+    async function fetchStates(){
+      let result = await StatesList(submitQuery, apiKey);
+      setStatesList(result && result.states ? result.states : [])
+
+      result = await FieldsList(submitQuery, apiKey, "Advisor");
+      setFieldsList(result && result.fields ? result.fields : [])
+    }
+
+    fetchStates();
+
+  }, [apiKey]);
+
+  useEffect(() => {
+    const fields = []
+    async function setFields() {
+      const orderedFields = _orderBy(selectedFields, ["style"], ["asc"]);
+      for await(const item of orderedFields){
+        if (item.style === "checkbox") {
+          fields.push({
+            field: <>
+              <FormControlLabel
+              control={
+                <Checkbox
+                checked={dataFields[item.name]}
+                onChange={() => handleFieldChange(item.name, !dataFields[item.name])}
+                inputProps={{ 'aria-label': 'primary checkbox' }}
+                label= {item.name}
+                />
+              }
+              label= {item.name}
+              />
+            </>,
+            width: "20%"
+          })
+        }
+        else if (["text", "textarea", "number", "percent"].indexOf(item.style) > -1) {
+          fields.push({
+            field:
+            <TextField
+              name={item.name}
+              label={item.name}
+              onChange={handleFieldChange}
+              required
+              type="decimal"
+              fullWidth
+            />,
+            width: "50%"
+          })
+        }
+      };
+      setInlineFields(fields);
+    };
+
+    setFields();
+  }, [selectedFields]);
+
+  const handleChange = (name, value) => {
     setData((d) => ({ ...d, [name]: value }));
+  }
+
+  const handleFieldChange = (name, value) => {
+    setDataFields((d) => ({ ...d, [name]: value }));
+  }
+
+  const handleChangeMultiple = (event) => {
+    const  options = event.target.value;
+    setSelectedFields(options);
+  };
+
+  let addressFields = [
+    {
+      field: <TextField name="address" label="Address" onChange={handleChange} fullWidth/>,
+      width: "50%"
+    },
+    {
+      field: <TextField name="city" label="City" onChange={handleChange} fullWidth/>,
+      width: "15%",
+      marginLeft: "1%"
+    },
+    {
+      field: <TextField name="zipcode" label="Zip Code" onChange={handleChange} fullWidth/>,
+      width: "15%",
+      marginLeft: "1%"
+    }
+  ];
+
+  if (statesList.length)
+    addressFields.splice(1 , 0,
+      {
+        field: (
+          <Autocomplete
+            options={statesList}
+            autoHighlight
+            getOptionLabel={(option) => option.name}
+            renderOption={(option) => option.name}
+            name="state"
+            onChange={(e, value) => handleChange("state", value ? value.id : null)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="State"
+                variant="outlined"
+                inputProps={{
+                  ...params.inputProps,
+                }}
+                onChange={() => {}}
+              />
+            )}
+          />
+        ),
+        width: "20%",
+        marginLeft: "1%"
+      }
+    ).join();
+
+
 
   return (
     <div>
@@ -46,7 +195,7 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
           const attributes = {
             demographic: {
               firstName: data.firstName,
-              lastName: data.lastName
+              lastName: data.lastName,
             }
           };
 
@@ -57,6 +206,28 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
           if (data.email) {
             attributes.emails = [{ address: data.email }];
           }
+
+          if (data.address || data.city || data.state || data.zipcode) {
+            attributes.addresses = [{
+              lineOne: data.address,
+              city: data.city,
+              stateId: data.state,
+              zipcode: data.zipcode
+            }];
+          }
+
+          // if (Object.keys(dataFields).length) {
+          //   attributes.fieldAttributes = [];
+          //   for (const key of Object.keys(dataFields)) {
+          //     const item = fieldsList.filter(e => e.name === key)[0];
+          //     attributes.fieldAttributes.push({
+          //       fieldId: item.id,
+          //       booleanValue: item.style === "checkbox" ? dataFields[key] : null,
+          //       stringValue: item.style !== "checkbox" ? dataFields[key] : null,
+          //     })
+          //   }
+          // }
+          // console.log(attributes)
           const response = await submitQuery(createAdvisor, {
             variables: {
               attributes
@@ -90,6 +261,27 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
           onChange={handleChange}
         />
         <TextField name="email" label="Email" onChange={handleChange} />
+        <InlineFields fields={addressFields} />
+        {fieldsList.length > 0 &&
+          <FormControl>
+            <InputLabel>Add Fields</InputLabel>
+            <Select
+            multiple
+            value={selectedFields}
+            onChange={handleChangeMultiple}
+            input={<Input />}
+            renderValue={(selected) => selected.map(item => item.name).join(", ")}
+            >
+            {fieldsList.map((field) => (
+              <MenuItem key={field.id} value={field}>
+              <Checkbox checked={selectedFields.indexOf(field) > -1} />
+              <ListItemText primary={field.name} />
+              </MenuItem>
+            ))}
+            </Select>
+          </FormControl>
+        }
+        {inlineFields.length > 0 && <InlineFields fields={inlineFields} />}
       </Form>
       <TableContainer>
         <Table>
@@ -100,6 +292,7 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
               <TableCell>Last Name</TableCell>
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Address</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -109,7 +302,7 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/advisors/${advisor.id}`}
+                      href={`${url}/advisors/${advisor.id}`}
                     >
                       {advisor.demographic.firstName}{" "}
                       {advisor.demographic.lastName}
@@ -123,11 +316,21 @@ export default function LastNAdvisors({ children, onError, submitQuery }) {
                   <TableCell>
                     {!!advisor.emails.length && advisor.emails[0].address}
                   </TableCell>
+                  <TableCell>
+                    {!!advisor.addresses.length &&
+                      [advisor.addresses[0].lineOne,
+                       advisor.addresses[0].lineTwo,
+                       advisor.addresses[0].city,
+                       advisor.addresses[0].state?.name,
+                       advisor.addresses[0].zipcode
+                     ].filter(el => el).join(", ")
+                    }
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} style={{ textAlign: "center" }}>
+                <TableCell colSpan={6} style={{ textAlign: "center" }}>
                   No advisors
                 </TableCell>
               </TableRow>
