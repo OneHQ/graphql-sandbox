@@ -40,9 +40,11 @@ const fetchAdvisors = `
   }
 `;
 
-export default function LastNAdvisors({ children, submitQuery }) {
+export default function LastNAdvisors({ children, submitQuery, graphqlURL }) {
   const [advisors, setAdvisors] = useState([]);
   const [data, setData] = useState({});
+
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
@@ -90,7 +92,7 @@ export default function LastNAdvisors({ children, submitQuery }) {
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/advisors/${advisor.id}`}
+                      href={`${url}/advisors/${advisor.id}`}
                     >
                       {advisor.demographic.firstName}{" "}
                       {advisor.demographic.lastName}
@@ -106,8 +108,8 @@ export default function LastNAdvisors({ children, submitQuery }) {
                   </TableCell>
                   <TableCell>
                     {advisor.addresses.map((p) =>
-                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>)
-                    }
+                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>
+                    )}
                   </TableCell>
                 </TableRow>
               ))

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { InputLabel, FormControl, makeStyles, MenuItem, Select, Tabs, Tab } from "@material-ui/core";
 import TextField from "./TextField";
 import "./styles.css";
@@ -8,6 +8,8 @@ import CreateClient from "./components/Client/CreateClient";
 import LastNClients from "./components/Client/LastNClients";
 import CreateContact from "./components/Contact/CreateContact";
 import LastNContacts from "./components/Contact/LastNContacts";
+import LastNOpportunities from "./components/Opportunity/LastNOpportunities";
+import CreateOpportunity from "./components/Opportunity/CreateOpportunity";
 import useGraphql from "./useGraphql";
 
 const useStyles = makeStyles((theme) => ({
@@ -27,13 +29,22 @@ export default function App() {
   const [type, setType] = useState("query");
   const [apiKey, setApiKey] = useState("");
   const [error, setError] = useState("");
-  const [resource, setResource] = useState("Advisor");
+  const [resource, setResource] = useState("Advisor, Advisors");
   const [graphqlURL, setGraphqlURL] = useState("staging");
   const submitQuery = useGraphql({
     apiKey,
     onError: setError,
-    url: graphqlURL === "staging" ? " https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
+    url: graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
   });
+
+  useEffect(() => {
+    setApiKey("")
+    setError("")
+  }, [graphqlURL]);
+
+  useEffect(() => {
+    setType ("query")
+  }, [resource]);
 
   const classes = useStyles();
 
@@ -61,9 +72,10 @@ export default function App() {
             onChange={(e, value) => setResource(value.props.value)}
             label="Resource"
           >
-            <MenuItem value={"Advisor"}>Advisors</MenuItem>
-            <MenuItem value={"Client"}>Clients</MenuItem>
-            <MenuItem value={"Contact"}>Contacts</MenuItem>
+            <MenuItem value={"Advisor, Advisors"}>Advisors</MenuItem>
+            <MenuItem value={"Client, Clients"}>Clients</MenuItem>
+            <MenuItem value={"Contact, Contacts"}>Contacts</MenuItem>
+            <MenuItem value={"Opportunity, Opportunities"}>Opportunities</MenuItem>
           </Select>
         </FormControl>
         <FormControl variant="outlined" className={classes.formControlRight}>
@@ -80,42 +92,52 @@ export default function App() {
       </div>
       <div className="App">
         <Tabs value={type} onChange={(e, value) => setType(value)}>
-          <Tab label={`Query ${resource}s`} value="query" />
-          <Tab label={`Create an ${resource}`} value="mutate" />
+          <Tab label={`Query ${resource.split(", ")[1]}`} value="query" />
+          <Tab label={`Create an ${resource.split(", ")[0]}`} value="mutate" />
         </Tabs>
         {error && <div className="error">{error}</div>}
         {type === "query" && (
-          (resource === "Advisor" && (
-            <LastNAdvisors submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Advisor" && (
+            <LastNAdvisors submitQuery={submitQuery} graphqlURL={graphqlURL}>
               {renderApiField}
             </LastNAdvisors>
           )) ||
-          (resource === "Client" && (
-            <LastNClients submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Client" && (
+            <LastNClients submitQuery={submitQuery} graphqlURL={graphqlURL}>
               {renderApiField}
             </LastNClients>
           )) ||
-          (resource === "Contact" && (
-            <LastNContacts submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Contact" && (
+            <LastNContacts submitQuery={submitQuery} graphqlURL={graphqlURL}>
               {renderApiField}
             </LastNContacts>
+          )) ||
+          (resource.split(", ")[0] === "Opportunity" && (
+            <LastNOpportunities submitQuery={submitQuery} graphqlURL={graphqlURL}>
+              {renderApiField}
+            </LastNOpportunities>
           ))
         )}
         {type === "mutate" && (
-          (resource === "Advisor" && (
-            <CreateAdvisor onError={onError} submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Advisor" && (
+            <CreateAdvisor onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
               {renderApiField}
             </CreateAdvisor>
           )) ||
-          (resource === "Client" && (
-            <CreateClient onError={onError} submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Client" && (
+            <CreateClient onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
               {renderApiField}
             </CreateClient>
           )) ||
-          (resource === "Contact" && (
-            <CreateContact onError={onError} submitQuery={submitQuery}>
+          (resource.split(", ")[0] === "Contact" && (
+            <CreateContact onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
               {renderApiField}
             </CreateContact>
+          )) ||
+          (resource.split(", ")[0] === "Opportunity" && (
+            <CreateOpportunity onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
+              {renderApiField}
+            </CreateOpportunity>
           ))
         )}
       </div>

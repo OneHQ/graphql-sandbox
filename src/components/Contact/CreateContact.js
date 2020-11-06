@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+/* eslint-disable react-hooks/exhaustive-deps */
+import React, { useState, useEffect } from "react";
 import {
   Link,
   Table,
@@ -6,10 +7,13 @@ import {
   TableContainer,
   TableRow,
   TableCell,
-  TableHead
+  TableHead,
 } from "@material-ui/core";
 import Form from "../../Form";
+import Autocomplete from '@material-ui/lab/Autocomplete';
+import InlineFields from "../../InlineFields";
 import TextField from "../../TextField";
+import StatesList from "../../helpers/StatesList"
 
 const createContact = `
   mutation CreateContact($attributes: ContactInput!) {
@@ -17,6 +21,16 @@ const createContact = `
       errors
       resource {
         id
+        addresses {
+          lineOne
+          lineTwo
+          city
+          state {
+            id
+            name
+          }
+          zipcode
+        }
         demographic {
           firstName
           lastName
@@ -32,12 +46,71 @@ const createContact = `
   }
 `;
 
-export default function LastNContacts({ children, onError, submitQuery }) {
+export default function CreateContact({ children, onError, submitQuery, apiKey , graphqlURL}) {
   const [contacts, setContacts] = useState([]);
   const [data, setData] = useState({});
+  const [statesList, setStatesList] = useState([]);
+
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+
+  useEffect(() => {
+    async function fetchStates(){
+      const result = await StatesList(submitQuery, apiKey);
+      setStatesList(result && result.states ? result.states : [])
+    }
+
+    fetchStates();
+
+  }, [apiKey]);
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
+
+  let addressFields = [
+    {
+      field: <TextField name="address" label="Address" onChange={handleChange} fullWidth/>,
+      width: "50%"
+    },
+    {
+      field: <TextField name="city" label="City" onChange={handleChange} fullWidth/>,
+      width: "15%",
+      marginLeft: "1%"
+    },
+    {
+      field: <TextField name="zipcode" label="Zip Code" onChange={handleChange} fullWidth/>,
+      width: "15%",
+      marginLeft: "1%"
+    }
+  ];
+
+  if (statesList.length)
+    addressFields.splice(1 , 0,
+      {
+        field: (
+          <Autocomplete
+            options={statesList}
+            autoHighlight
+            getOptionLabel={(option) => option.name}
+            renderOption={(option) => option.name}
+            name="state"
+            onChange={(e, value) => handleChange("state", value ? value.id : null)}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="State"
+                variant="outlined"
+                inputProps={{
+                  ...params.inputProps,
+                }}
+                onChange={() => {}}
+              />
+            )}
+          />
+        ),
+        width: "20%",
+        marginLeft: "1%"
+      }
+    ).join();
 
   return (
     <div>
@@ -57,6 +130,16 @@ export default function LastNContacts({ children, onError, submitQuery }) {
           if (data.email) {
             attributes.emails = [{ address: data.email }];
           }
+
+          if (data.address || data.city || data.state || data.zipcode) {
+            attributes.addresses = [{
+              lineOne: data.address,
+              city: data.city,
+              stateId: data.state,
+              zipcode: data.zipcode
+            }];
+          }
+
           const response = await submitQuery(createContact, {
             variables: {
               attributes
@@ -90,6 +173,7 @@ export default function LastNContacts({ children, onError, submitQuery }) {
           onChange={handleChange}
         />
         <TextField name="email" label="Email" onChange={handleChange} />
+        <InlineFields fields={addressFields} />
       </Form>
       <TableContainer>
         <Table>
@@ -100,6 +184,7 @@ export default function LastNContacts({ children, onError, submitQuery }) {
               <TableCell>Last Name</TableCell>
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
+              <TableCell>Address</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -109,7 +194,7 @@ export default function LastNContacts({ children, onError, submitQuery }) {
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`https://www.agencieshq.com/contacts/${contact.id}`}
+                      href={`${url}/${contact.id}`}
                     >
                       {contact.demographic.firstName}{" "}
                       {contact.demographic.lastName}
@@ -123,11 +208,21 @@ export default function LastNContacts({ children, onError, submitQuery }) {
                   <TableCell>
                     {!!contact.emails.length && contact.emails[0].address}
                   </TableCell>
+                  <TableCell>
+                    {!!contact.addresses.length &&
+                      [contact.addresses[0].lineOne,
+                       contact.addresses[0].lineTwo,
+                       contact.addresses[0].city,
+                       contact.addresses[0].state?.name,
+                       contact.addresses[0].zipcode
+                     ].filter(el => el).join(", ")
+                    }
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={5} style={{ textAlign: "center" }}>
+                <TableCell colSpan={6} style={{ textAlign: "center" }}>
                   No contacts
                 </TableCell>
               </TableRow>
