@@ -48,6 +48,15 @@ const createAdvisor = `
         emails {
           address
         }
+        fieldAttributes {
+          id
+          value
+          field {
+            id
+            name
+            style
+          }
+        }
         phones {
           number
         }
@@ -71,7 +80,7 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
   const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   useEffect(() => {
-    async function fetchStates(){
+    async function fetchData(){
       let result = await StatesList(submitQuery, apiKey);
       setStatesList(result && result.states ? result.states : [])
 
@@ -79,7 +88,7 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
       setFieldsList(result && result.fields ? result.fields : [])
     }
 
-    fetchStates();
+    fetchData();
 
   }, [apiKey]);
 
@@ -106,7 +115,7 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
             width: "20%"
           })
         }
-        else if (["text", "textarea", "number", "percent"].indexOf(item.style) > -1) {
+        else if (["text", "decimal"].indexOf(item.style) > -1) {
           fields.push({
             field:
             <TextField
@@ -114,9 +123,30 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
               label={item.name}
               onChange={handleFieldChange}
               required
-              type="decimal"
+              type={item.style === "decimal" ? "number" : "text"}
               fullWidth
             />,
+            width: "50%"
+          })
+        }
+        else if (["select"].indexOf(item.style) > -1) {
+          fields.push({
+            field:<>
+              <FormControl variant="outlined" fullWidth>
+                <InputLabel>{item.name}</InputLabel>
+                <Select
+                  name={item.name}
+                  value={dataFields[item.name]}
+                  defaultValue={""}
+                  onChange={(e) => handleFieldChange(item.name, e.target.value)}
+                  label={item.name}
+                >
+                {item.selectOptions.map(el => (
+                  <MenuItem key={el.id} value={el.name}>{el.name}</MenuItem>
+                ))}
+                </Select>
+              </FormControl>
+            </>,
             width: "50%"
           })
         }
@@ -216,18 +246,19 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
             }];
           }
 
-          // if (Object.keys(dataFields).length) {
-          //   attributes.fieldAttributes = [];
-          //   for (const key of Object.keys(dataFields)) {
-          //     const item = fieldsList.filter(e => e.name === key)[0];
-          //     attributes.fieldAttributes.push({
-          //       fieldId: item.id,
-          //       booleanValue: item.style === "checkbox" ? dataFields[key] : null,
-          //       stringValue: item.style !== "checkbox" ? dataFields[key] : null,
-          //     })
-          //   }
-          // }
-          // console.log(attributes)
+          if (Object.keys(dataFields).length) {
+            attributes.fieldAttributes = [];
+            for (const key of Object.keys(dataFields)) {
+              const item = fieldsList.filter(e => e.name === key)[0];
+              attributes.fieldAttributes.push({
+                fieldId: item.id,
+                booleanValue: item.style === "checkbox" ? dataFields[key] : null,
+                decimalValue: item.style === "decimal" ? parseFloat(dataFields[key]) : null,
+                stringValue: ["checkbox", "decimal"].indexOf(item.style) === -1 ? dataFields[key] : null,
+              })
+            }
+          }
+
           const response = await submitQuery(createAdvisor, {
             variables: {
               attributes
@@ -293,6 +324,7 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Address</TableCell>
+              <TableCell>Attributes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -326,11 +358,24 @@ export default function CreateAdvisor({ children, onError, submitQuery, apiKey, 
                      ].filter(el => el).join(", ")
                     }
                   </TableCell>
+                  <TableCell>
+                  {!!advisor.fieldAttributes.length && advisor.fieldAttributes.map((field) => {
+                    if (field.field.style !== "checkbox")
+                      return  <p key={`adv${field.id}`}>
+                                <b>{field.field.name}:</b> {field.value === "true" ? "Yes" : (field.value === "false" ? "No" : field.value)}
+                              </p>
+                    else
+                      return  field.value === "true" ?
+                              <p key={`adv${field.id}`}>
+                                <b>{field.field.name}</b>
+                              </p> : null
+                  })}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
+                <TableCell colSpan={7} style={{ textAlign: "center" }}>
                   No advisors
                 </TableCell>
               </TableRow>

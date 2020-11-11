@@ -5,6 +5,10 @@ const fetchFields = (type) => (
       id
       name
       style
+      selectOptions {
+        id
+        name
+      }
     }
   }
   `

@@ -33,6 +33,15 @@ const fetchClients = `
       emails {
         address
       }
+      fieldAttributes {
+        id
+        value
+        field {
+          id
+          name
+          style
+        }
+      }
       phones {
         number
       }
@@ -84,6 +93,7 @@ export default function LastNClients({ children, submitQuery, graphqlURL }) {
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Address</TableCell>
+              <TableCell>Attributes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -112,11 +122,24 @@ export default function LastNClients({ children, submitQuery, graphqlURL }) {
                       <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>)
                     }
                   </TableCell>
+                  <TableCell>
+                    {!!client.fieldAttributes.length && client.fieldAttributes.map((field) => {
+                      if (field.field.style !== "checkbox")
+                        return  <p key={`cli${field.id}`}>
+                                  <b>{field.field.name}:</b> {field.value === "true" ? "Yes" : (field.value === "false" ? "No" : field.value)}
+                                </p>
+                      else
+                        return  field.value === "true" ?
+                                <p key={`cli${field.id}`}>
+                                  <b>{field.field.name}</b>
+                                </p> : null
+                    })}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
+                <TableCell colSpan={7} style={{ textAlign: "center" }}>
                   No clients
                 </TableCell>
               </TableRow>
