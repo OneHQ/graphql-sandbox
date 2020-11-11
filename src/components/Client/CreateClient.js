@@ -242,9 +242,10 @@ export default function CreateClient({ children, onError, submitQuery, apiKey, g
             }];
           }
 
-          if (Object.keys(dataFields).length) {
+          const dataFieldsKeys = Object.keys(dataFields);
+          if (dataFieldsKeys.length) {
             attributes.fieldAttributes = [];
-            for (const key of Object.keys(dataFields)) {
+            for (const key of dataFieldsKeys) {
               const item = fieldsList.filter(e => e.name === key)[0];
               attributes.fieldAttributes.push({
                 fieldId: item.id,
