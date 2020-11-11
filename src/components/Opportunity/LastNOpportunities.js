@@ -60,7 +60,7 @@ export default function LastNOpportunities({ children, submitQuery, graphqlURL }
   const [opportunities, setOpportunities] = useState([]);
   const [data, setData] = useState({});
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
+  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));

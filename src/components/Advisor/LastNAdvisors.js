@@ -33,6 +33,15 @@ const fetchAdvisors = `
       emails {
         address
       }
+      fieldAttributes {
+        id
+        value
+        field {
+          id
+          name
+          style
+        }
+      }
       phones {
         number
       }
@@ -83,6 +92,7 @@ export default function LastNAdvisors({ children, submitQuery, graphqlURL }) {
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Address</TableCell>
+              <TableCell>Attributes</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -111,11 +121,24 @@ export default function LastNAdvisors({ children, submitQuery, graphqlURL }) {
                       <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>
                     )}
                   </TableCell>
+                  <TableCell>
+                    {!!advisor.fieldAttributes.length && advisor.fieldAttributes.map((field) => {
+                      if (field.field.style !== "checkbox")
+                        return  <p key={`adv${field.id}`}>
+                                  <b>{field.field.name}:</b> {field.value === "true" ? "Yes" : (field.value === "false" ? "No" : field.value)}
+                                </p>
+                      else
+                        return  field.value === "true" ?
+                                <p key={`adv${field.id}`}>
+                                  <b>{field.field.name}</b>
+                                </p> : null
+                    })}
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
+                <TableCell colSpan={7} style={{ textAlign: "center" }}>
                   No advisors
                 </TableCell>
               </TableRow>
