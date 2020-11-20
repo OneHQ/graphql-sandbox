@@ -10,10 +10,11 @@ import {
   TableHead,
 } from "@material-ui/core";
 import Form from "../../Form";
-import Autocomplete from '@material-ui/lab/Autocomplete';
 import InlineFields from "../../InlineFields";
 import TextField from "../../TextField";
-import StatesList from "../../helpers/StatesList"
+import addressFieldsArray from "../../helpers/addressFieldsArray"
+import StatesList from "../../helpers/StatesList";
+import { GraphqlContext } from "../../App"
 
 const createContact = `
   mutation CreateContact($attributes: ContactInput!) {
@@ -46,71 +47,28 @@ const createContact = `
   }
 `;
 
-export default function CreateContact({ children, onError, submitQuery, apiKey , graphqlURL}) {
+export default function CreateContact({ children, onError, submitQuery }) {
+  const context = React.useContext(GraphqlContext);
   const [contacts, setContacts] = useState([]);
   const [data, setData] = useState({});
   const [statesList, setStatesList] = useState([]);
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+  const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   useEffect(() => {
     async function fetchStates(){
-      const result = await StatesList(submitQuery, apiKey);
+      const result = await StatesList(submitQuery, context.apiKey);
       setStatesList(result && result.states ? result.states : [])
     }
 
     fetchStates();
 
-  }, [apiKey]);
+  }, [context.apiKey]);
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
 
-  let addressFields = [
-    {
-      field: <TextField name="address" label="Address" onChange={handleChange} fullWidth/>,
-      width: "50%"
-    },
-    {
-      field: <TextField name="city" label="City" onChange={handleChange} fullWidth/>,
-      width: "15%",
-      marginLeft: "1%"
-    },
-    {
-      field: <TextField name="zipcode" label="Zip Code" onChange={handleChange} fullWidth/>,
-      width: "15%",
-      marginLeft: "1%"
-    }
-  ];
-
-  if (statesList.length)
-    addressFields.splice(1 , 0,
-      {
-        field: (
-          <Autocomplete
-            options={statesList}
-            autoHighlight
-            getOptionLabel={(option) => option.name}
-            renderOption={(option) => option.name}
-            name="state"
-            onChange={(e, value) => handleChange("state", value ? value.id : null)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="State"
-                variant="outlined"
-                inputProps={{
-                  ...params.inputProps,
-                }}
-                onChange={() => {}}
-              />
-            )}
-          />
-        ),
-        width: "20%",
-        marginLeft: "1%"
-      }
-    ).join();
+  let addressFields = addressFieldsArray(statesList, handleChange);
 
   return (
     <div>

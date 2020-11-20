@@ -11,6 +11,7 @@ export default function InlineFields({ fields }) {
     }
     else {
       key += 1;
+      item.marginLeft = "0";
       fieldGroups.push([]);
       fieldGroups[key].push(item);
       widthCount = parseInt(item.width.replace("%",""));

@@ -1,7 +1,6 @@
-const fetchFields = (type) => (
-  `
-  query fieldsList {
-    fields(type: "${type}") {
+const fetchFields = `
+  query fieldsList($type: String) {
+    fields(type: $type) {
       id
       name
       style
@@ -11,15 +10,14 @@ const fetchFields = (type) => (
       }
     }
   }
-  `
-)
+  `;
 
 
 export default async function FieldsList(submitQuery, apiKey, type) {
 
   if(apiKey) {
     try {
-      const result = await submitQuery(fetchFields(type), {});
+      const result = await submitQuery(fetchFields, {variables: {type: type}});
       return result
     } catch (error) {
       console.log(error);

@@ -1,10 +1,8 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 import React, { useState, useEffect } from "react";
-import _orderBy from "lodash/orderBy"
 import {
   Checkbox,
   FormControl,
-  FormControlLabel,
   Input,
   InputLabel,
   Link,
@@ -19,11 +17,13 @@ import {
   TableHead,
 } from "@material-ui/core";
 import Form from "../../Form";
-import Autocomplete from '@material-ui/lab/Autocomplete';
 import InlineFields from "../../InlineFields";
 import TextField from "../../TextField";
 import FieldsList from "../../helpers/FieldsList"
 import StatesList from "../../helpers/StatesList"
+import addressFieldsArray from "../../helpers/addressFieldsArray"
+import useFieldAttributesHook from "../../hooks/useFieldAttributesHook"
+import { GraphqlContext } from "../../App"
 
 const createClient = `
   mutation CreateClient($attributes: ClientInput!) {
@@ -65,7 +65,8 @@ const createClient = `
   }
 `;
 
-export default function CreateClient({ children, onError, submitQuery, apiKey, graphqlURL }) {
+export default function CreateClient({ children, onError, submitQuery }) {
+  const context = React.useContext(GraphqlContext);
   const [clients, setClients] = useState([]);
   const [data, setData] = useState({});
   const [dataFields, setDataFields] = useState({});
@@ -76,85 +77,26 @@ export default function CreateClient({ children, onError, submitQuery, apiKey, g
 
   const [statesList, setStatesList] = useState([]);
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+  const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   useEffect(() => {
     async function fetchData(){
-      let result = await StatesList(submitQuery, apiKey);
+      let result = await StatesList(submitQuery, context.apiKey);
       setStatesList(result && result.states ? result.states : [])
 
-      result = await FieldsList(submitQuery, apiKey, "Client");
+      result = await FieldsList(submitQuery, context.apiKey, "Client");
       setFieldsList(result && result.fields ? result.fields : [])
     }
 
     fetchData();
 
-  }, [apiKey]);
+    return () => {
+      setStatesList([]);
+      setFieldsList([]);
+    }
 
-  useEffect(() => {
-    const fields = []
-    async function setFields() {
-      const orderedFields = _orderBy(selectedFields, ["style"], ["asc"]);
-      for await(const item of orderedFields){
-        if (item.style === "checkbox") {
-          fields.push({
-            field: <>
-              <FormControlLabel
-              control={
-                <Checkbox
-                checked={dataFields[item.name]}
-                onChange={() => handleFieldChange(item.name, !dataFields[item.name])}
-                inputProps={{ 'aria-label': 'primary checkbox' }}
-                label= {item.name}
-                />
-              }
-              label= {item.name}
-              />
-            </>,
-            width: "20%"
-          })
-        }
-        else if (["text", "decimal"].indexOf(item.style) > -1) {
-          fields.push({
-            field:
-            <TextField
-              name={item.name}
-              label={item.name}
-              onChange={handleFieldChange}
-              required
-              type={item.style === "decimal" ? "number" : "text"}
-              fullWidth
-            />,
-            width: "50%"
-          })
-        }
-        else if (["select"].indexOf(item.style) > -1) {
-          fields.push({
-            field:<>
-              <FormControl variant="outlined" fullWidth>
-                <InputLabel>{item.name}</InputLabel>
-                <Select
-                  name={item.name}
-                  value={dataFields[item.name]}
-                  defaultValue={""}
-                  onChange={(e) => handleFieldChange(item.name, e.target.value)}
-                  label={item.name}
-                >
-                {item.selectOptions.map(el => (
-                  <MenuItem key={el.id} value={el.name}>{el.name}</MenuItem>
-                ))}
-                </Select>
-              </FormControl>
-            </>,
-            width: "50%"
-          })
-        }
-      };
-      setInlineFields(fields);
-    };
+  }, [context.apiKey]);
 
-    setFields();
-  }, [selectedFields]);
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
@@ -168,51 +110,9 @@ export default function CreateClient({ children, onError, submitQuery, apiKey, g
     setSelectedFields(options);
   };
 
-  let addressFields = [
-    {
-      field: <TextField name="address" label="Address" onChange={handleChange} fullWidth/>,
-      width: "50%"
-    },
-    {
-      field: <TextField name="city" label="City" onChange={handleChange} fullWidth/>,
-      width: "15%",
-      marginLeft: "1%"
-    },
-    {
-      field: <TextField name="zipcode" label="Zip Code" onChange={handleChange} fullWidth/>,
-      width: "15%",
-      marginLeft: "1%"
-    }
-  ];
+  useFieldAttributesHook(dataFields, handleFieldChange, setInlineFields, selectedFields);
 
-  if (statesList.length)
-    addressFields.splice(1 , 0,
-      {
-        field: (
-          <Autocomplete
-            options={statesList}
-            autoHighlight
-            getOptionLabel={(option) => option.name}
-            renderOption={(option) => option.name}
-            name="state"
-            onChange={(e, value) => handleChange("state", value ? value.id : null)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label="State"
-                variant="outlined"
-                inputProps={{
-                  ...params.inputProps,
-                }}
-                onChange={() => {}}
-              />
-            )}
-          />
-        ),
-        width: "20%",
-        marginLeft: "1%"
-      }
-    ).join();
+  let addressFields = addressFieldsArray(statesList, handleChange);
 
   return (
     <div>
@@ -242,7 +142,7 @@ export default function CreateClient({ children, onError, submitQuery, apiKey, g
             }];
           }
 
-          const dataFieldsKeys = Object.keys(dataFields);
+          const dataFieldsKeys = selectedFields.map(el => el.name);
           if (dataFieldsKeys.length) {
             attributes.fieldAttributes = [];
             for (const key of dataFieldsKeys) {
