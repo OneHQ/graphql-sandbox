@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   FormControl,
   InputLabel,
@@ -17,8 +17,9 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import Form from "../../Form";
 import TextField from "../../TextField";
 import InlineFields from "../../InlineFields";
-import StatesList from "../../helpers/StatesList"
-import { GraphqlContext } from "../../App"
+import StatesList from "../../helpers/StatesList";
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createFirm = `
   mutation CreateFirm($attributes: FirmInput!) {
@@ -58,13 +59,18 @@ export default function CreateFirm({ children, onError, submitQuery }) {
   const [statesList, setStatesList] = useState([]);
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData) => fetchData(), 500),
+    [],
+  );
+
   useEffect(() => {
     async function fetchData(){
       let result = await StatesList(submitQuery, context.apiKey);
       setStatesList(result && result.states ? result.states : [])
     }
 
-    fetchData();
+    debounceFetch(fetchData);
 
   }, [context.apiKey]);
 

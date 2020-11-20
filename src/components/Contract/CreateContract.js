@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Link,
   Table,
@@ -12,9 +12,10 @@ import {
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import Form from "../../Form";
 import TextField from "../../TextField";
-import ProductTypesList from "../../helpers/ProductTypesList"
-import SearchQuery from "../../helpers/SearchQuery"
-import { GraphqlContext } from "../../App"
+import ProductTypesList from "../../helpers/ProductTypesList";
+import SearchQuery from "../../helpers/SearchQuery";
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createContract = `
   mutation CreateContract($attributes: ContractInput!) {
@@ -53,6 +54,11 @@ export default function CreateContract({ children, onError, submitQuery }) {
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData, value, resource) => fetchData(value, resource), 500),
+    [],
+  );
+
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
@@ -60,7 +66,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
       setProductTypesList(result);
     }
 
-    fetchData();
+    debounceFetch(fetchData);
 
   }, [context.apiKey]);
 
@@ -68,7 +74,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
     setData((d) => ({ ...d, [name]: value }));
   }
 
-  const handleKeyPressChange = async (value, resource) => {
+  async function handleKeyPressChange(value, resource) {
     const results =  await SearchQuery(submitQuery, context.apiKey, value, [resource]);
     if (resource === "Advisor") {
       setAdvisorsList(results.results ? results.results : []);
@@ -133,7 +139,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
               inputProps={{
                 ...params.inputProps,
               }}
-              onChange={(e, value) => handleKeyPressChange(value, "Advisor")}
+              onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Advisor")}
               required
             />
           )}
@@ -154,7 +160,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
               inputProps={{
                 ...params.inputProps,
               }}
-              onChange={(e, value) => handleKeyPressChange(value, "Carrier")}
+              onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Carrier")}
               required
             />
           )}

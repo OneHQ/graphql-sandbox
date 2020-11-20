@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Link,
   Table,
@@ -12,9 +12,10 @@ import {
 import Form from "../../Form";
 import InlineFields from "../../InlineFields";
 import TextField from "../../TextField";
-import addressFieldsArray from "../../helpers/addressFieldsArray"
+import addressFieldsArray from "../../helpers/addressFieldsArray";
 import StatesList from "../../helpers/StatesList";
-import { GraphqlContext } from "../../App"
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createContact = `
   mutation CreateContact($attributes: ContactInput!) {
@@ -55,13 +56,18 @@ export default function CreateContact({ children, onError, submitQuery }) {
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData) => fetchData(), 500),
+    [],
+  );
+
   useEffect(() => {
-    async function fetchStates(){
+    async function fetchData(){
       const result = await StatesList(submitQuery, context.apiKey);
       setStatesList(result && result.states ? result.states : [])
     }
 
-    fetchStates();
+    debounceFetch(fetchData);
 
   }, [context.apiKey]);
 
