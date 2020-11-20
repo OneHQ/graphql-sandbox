@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Checkbox,
   FormControl,
@@ -19,11 +19,12 @@ import {
 import Form from "../../Form";
 import TextField from "../../TextField";
 import InlineFields from "../../InlineFields";
-import FieldsList from "../../helpers/FieldsList"
-import StatesList from "../../helpers/StatesList"
-import addressFieldsArray from "../../helpers/addressFieldsArray"
-import useFieldAttributesHook from "../../hooks/useFieldAttributesHook"
-import { GraphqlContext } from "../../App"
+import FieldsList from "../../helpers/FieldsList";
+import StatesList from "../../helpers/StatesList";
+import addressFieldsArray from "../../helpers/addressFieldsArray";
+import useFieldAttributesHook from "../../hooks/useFieldAttributesHook";
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createAdvisor = `
   mutation CreateAdvisor($attributes: AdvisorInput!) {
@@ -79,6 +80,11 @@ export default function CreateAdvisor({ children, onError, submitQuery }) {
   const [statesList, setStatesList] = useState([]);
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData) => fetchData(), 500),
+    [],
+  );
+
   useEffect(() => {
     async function fetchData(){
       let result = await StatesList(submitQuery, context.apiKey);
@@ -88,7 +94,7 @@ export default function CreateAdvisor({ children, onError, submitQuery }) {
       setFieldsList(result && result.fields ? result.fields : [])
     }
 
-    fetchData();
+    debounceFetch(fetchData);
 
     return () => {
       setStatesList([]);

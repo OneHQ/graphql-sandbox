@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Checkbox,
   FormControl,
@@ -21,12 +21,13 @@ import DateFnsUtils from '@date-io/date-fns';
 import Form from "../../Form";
 import TextField from "../../TextField";
 import InlineFields from "../../InlineFields";
-import OptionsList from "../../helpers/OptionsList"
-import ProductsList from "../../helpers/ProductsList"
-import ProductTypesList from "../../helpers/ProductTypesList"
-import SearchQuery from "../../helpers/SearchQuery"
-import StatesList from "../../helpers/StatesList"
-import { GraphqlContext } from "../../App"
+import OptionsList from "../../helpers/OptionsList";
+import ProductsList from "../../helpers/ProductsList";
+import ProductTypesList from "../../helpers/ProductTypesList";
+import SearchQuery from "../../helpers/SearchQuery";
+import StatesList from "../../helpers/StatesList";
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createPolicy = `
   mutation CreatePolicy($attributes: PolicyInput!) {
@@ -90,6 +91,11 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData, value, resource) => fetchData(value, resource), 500),
+    [],
+  );
+
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
@@ -106,7 +112,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
       setPolicyTypeList(result && result.options ? result.options : []);
     }
 
-    fetchData();
+    debounceFetch(fetchData);
 
   }, [context.apiKey]);
 
@@ -122,7 +128,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
   }, [data.productType, data.carrier]);
 
 
-  const handleKeyPressChange = async (value, resource) => {
+  async function handleKeyPressChange(value, resource) {
     const results =  await SearchQuery(submitQuery, context.apiKey, value, [resource]);
     if (resource === "Advisor") {
       setAdvisorsList(results.results ? results.results : []);
@@ -245,7 +251,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
               inputProps={{
                 ...params.inputProps,
               }}
-              onChange={(e, value) => handleKeyPressChange(value, "Carrier")}
+              onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Carrier")}
               required
             />
           )}
@@ -406,7 +412,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
                   inputProps={{
                     ...params.inputProps,
                   }}
-                  onChange={(e, value) => handleKeyPressChange(value, "Advisor")}
+                  onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Advisor")}
                   required
                 />
               )}
@@ -440,7 +446,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
                   inputProps={{
                     ...params.inputProps,
                   }}
-                  onChange={(e, value) => handleKeyPressChange(value, "Client")}
+                  onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Client")}
                   required
                 />
               )}

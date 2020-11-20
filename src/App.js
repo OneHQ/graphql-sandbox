@@ -31,6 +31,25 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+const queryMapping = {
+  Advisor: LastNAdvisors,
+  Client: LastNClients,
+  Contact: LastNContacts,
+  Contract: LastNContracts,
+  Firm: LastNFirms,
+  Opportunity: LastNOpportunities,
+  Policy: LastNPolicies
+}
+const mutationMapping = {
+  Advisor: CreateAdvisor,
+  Client: CreateClient,
+  Contact: CreateContact,
+  Contract: CreateContract,
+  Firm: CreateFirm,
+  Opportunity: CreateOpportunity,
+  Policy: CreatePolicy,
+}
+
 export const GraphqlContext = React.createContext();
 
 export default function App() {
@@ -42,7 +61,7 @@ export default function App() {
   const submitQuery = useGraphql({
     apiKey,
     onError: setError,
-      url: graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
+      url: graphqlURL === "staging" ? " http://localhost:3000/gql"  : "https://agencieshq.com/graphql"
   });
 
   useEffect(() => {
@@ -69,6 +88,9 @@ export default function App() {
       value={apiKey}
     />
   );
+
+  const resourceName = resource.split(", ")[0];
+  const ResourceComponent = type === "query" ? queryMapping[resourceName] : mutationMapping[resourceName];
 
   return (
     <GraphqlContext.Provider value={{apiKey, graphqlURL}}>
@@ -107,80 +129,9 @@ export default function App() {
           <Tab label={`Create an ${resource.split(", ")[0]}`} value="mutate" />
         </Tabs>
         {error && <div className="error">{error}</div>}
-        {type === "query" && (
-          (resource.split(", ")[0] === "Advisor" && (
-            <LastNAdvisors submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNAdvisors>
-          )) ||
-          (resource.split(", ")[0] === "Client" && (
-            <LastNClients submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNClients>
-          )) ||
-          (resource.split(", ")[0] === "Contact" && (
-            <LastNContacts submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNContacts>
-          )) ||
-          (resource.split(", ")[0] === "Contract" && (
-            <LastNContracts submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNContracts>
-          )) ||
-          (resource.split(", ")[0] === "Firm" && (
-            <LastNFirms submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNFirms>
-          )) ||
-          (resource.split(", ")[0] === "Opportunity" && (
-            <LastNOpportunities submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNOpportunities>
-          )) ||
-          (resource.split(", ")[0] === "Policy" && (
-            <LastNPolicies submitQuery={submitQuery} >
-              {renderApiField}
-            </LastNPolicies>
-          ))
-        )}
-        {type === "mutate" && (
-          (resource.split(", ")[0] === "Advisor" && (
-            <CreateAdvisor onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateAdvisor>
-          )) ||
-          (resource.split(", ")[0] === "Client" && (
-            <CreateClient onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateClient>
-          )) ||
-          (resource.split(", ")[0] === "Contact" && (
-            <CreateContact onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateContact>
-          )) ||
-          (resource.split(", ")[0] === "Contract" && (
-            <CreateContract onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateContract>
-          )) ||
-          (resource.split(", ")[0] === "Firm" && (
-            <CreateFirm onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateFirm>
-          )) ||
-          (resource.split(", ")[0] === "Opportunity" && (
-            <CreateOpportunity onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreateOpportunity>
-          )) ||
-          (resource.split(", ")[0] === "Policy" && (
-            <CreatePolicy onError={onError} submitQuery={submitQuery} >
-              {renderApiField}
-            </CreatePolicy>
-          ))
-        )}
+        <ResourceComponent onError={onError} submitQuery={submitQuery} >
+          {renderApiField}
+        </ResourceComponent>
       </div>
     </GraphqlContext.Provider>
   );

@@ -1,5 +1,5 @@
 /* eslint-disable react-hooks/exhaustive-deps */
-import React, { useState, useEffect } from "react";
+import React, { useState, useCallback, useEffect } from "react";
 import {
   Checkbox,
   FormControl,
@@ -19,10 +19,11 @@ import Form from "../../Form";
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from "../../TextField";
 import InlineFields from "../../InlineFields";
-import OptionsList from "../../helpers/OptionsList"
-import ProductTypesList from "../../helpers/ProductTypesList"
-import SearchQuery from "../../helpers/SearchQuery"
-import { GraphqlContext } from "../../App"
+import OptionsList from "../../helpers/OptionsList";
+import ProductTypesList from "../../helpers/ProductTypesList";
+import SearchQuery from "../../helpers/SearchQuery";
+import { GraphqlContext } from "../../App";
+import debounce from 'lodash/debounce';
 
 const createOpportunity = `
   mutation CreateOpportunity($attributes: OpportunityInput!) {
@@ -121,6 +122,11 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
+  const debounceFetch = useCallback(
+    debounce((fetchData, value, resource) => fetchData(value, resource), 500),
+    [],
+  );
+
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
@@ -137,7 +143,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
       setPolicyHolderTypeList(result && result.options ? result.options : []);
     }
 
-    fetchData();
+    debounceFetch(fetchData);
 
   }, [context.apiKey]);
 
@@ -147,7 +153,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
     setFilteredPolicyHolderTypes(result);
   }, [data.productType]);
 
-  const handleKeyPressChange = async (value, resource) => {
+  async function handleKeyPressChange(value, resource) {
     const results =  await SearchQuery(submitQuery, context.apiKey, value, [resource]);
     if (resource === "Advisor") {
       setAdvisorsList(results.results ? results.results : []);
@@ -292,7 +298,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
               inputProps={{
                 ...params.inputProps,
               }}
-              onChange={(e, value) => handleKeyPressChange(value, options.policyHolderConType)}
+              onChange={(e, value) => debounceFetch(handleKeyPressChange, value, options.policyHolderConType)}
               required
             />
           )}
@@ -341,7 +347,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
               inputProps={{
                 ...params.inputProps,
               }}
-              onChange={(e, value) => handleKeyPressChange(value, options.recommendationOwnerType)}
+              onChange={(e, value) => debounceFetch(handleKeyPressChange, value, options.recommendationOwnerType)}
               required
             />
           )}
@@ -588,7 +594,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
                 inputProps={{
                   ...params.inputProps,
                 }}
-                onChange={(e, value) => handleKeyPressChange(value, "Advisor")}
+                onChange={(e, value) => debounceFetch(handleKeyPressChange, value, "Advisor")}
                 required
               />
             )}
