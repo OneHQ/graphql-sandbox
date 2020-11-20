@@ -8,8 +8,14 @@ import CreateClient from "./components/Client/CreateClient";
 import LastNClients from "./components/Client/LastNClients";
 import CreateContact from "./components/Contact/CreateContact";
 import LastNContacts from "./components/Contact/LastNContacts";
+import CreateContract from "./components/Contract/CreateContract";
+import LastNContracts from "./components/Contract/LastNContracts";
+import LastNFirms from "./components/Firm/LastNFirms";
+import CreateFirm from "./components/Firm/CreateFirm";
 import LastNOpportunities from "./components/Opportunity/LastNOpportunities";
 import CreateOpportunity from "./components/Opportunity/CreateOpportunity";
+import LastNPolicies from "./components/Policy/LastNPolicies";
+import CreatePolicy from "./components/Policy/CreatePolicy";
 import useGraphql from "./useGraphql";
 
 const useStyles = makeStyles((theme) => ({
@@ -25,6 +31,8 @@ const useStyles = makeStyles((theme) => ({
   }
 }));
 
+export const GraphqlContext = React.createContext();
+
 export default function App() {
   const [type, setType] = useState("query");
   const [apiKey, setApiKey] = useState("");
@@ -34,7 +42,7 @@ export default function App() {
   const submitQuery = useGraphql({
     apiKey,
     onError: setError,
-    url: graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
+      url: graphqlURL === "staging" ? " http://localhost:3000/gql"  : "https://agencieshq.com/graphql"
   });
 
   useEffect(() => {
@@ -63,7 +71,7 @@ export default function App() {
   );
 
   return (
-    <div>
+    <GraphqlContext.Provider value={{apiKey, graphqlURL}}>
       <div className="AppHeader">
         <FormControl variant="outlined" className={classes.formControlLeft}>
           <InputLabel>Resource</InputLabel>
@@ -75,7 +83,10 @@ export default function App() {
             <MenuItem value={"Advisor, Advisors"}>Advisors</MenuItem>
             <MenuItem value={"Client, Clients"}>Clients</MenuItem>
             <MenuItem value={"Contact, Contacts"}>Contacts</MenuItem>
+            <MenuItem value={"Contract, Contracts"}>Contracts</MenuItem>
+            <MenuItem value={"Firm, Firms"}>Firms</MenuItem>
             <MenuItem value={"Opportunity, Opportunities"}>Opportunities</MenuItem>
+            <MenuItem value={"Policy, Policies"}>Policies</MenuItem>
           </Select>
         </FormControl>
         <FormControl variant="outlined" className={classes.formControlRight}>
@@ -98,49 +109,79 @@ export default function App() {
         {error && <div className="error">{error}</div>}
         {type === "query" && (
           (resource.split(", ")[0] === "Advisor" && (
-            <LastNAdvisors submitQuery={submitQuery} graphqlURL={graphqlURL}>
+            <LastNAdvisors submitQuery={submitQuery} >
               {renderApiField}
             </LastNAdvisors>
           )) ||
           (resource.split(", ")[0] === "Client" && (
-            <LastNClients submitQuery={submitQuery} graphqlURL={graphqlURL}>
+            <LastNClients submitQuery={submitQuery} >
               {renderApiField}
             </LastNClients>
           )) ||
           (resource.split(", ")[0] === "Contact" && (
-            <LastNContacts submitQuery={submitQuery} graphqlURL={graphqlURL}>
+            <LastNContacts submitQuery={submitQuery} >
               {renderApiField}
             </LastNContacts>
           )) ||
+          (resource.split(", ")[0] === "Contract" && (
+            <LastNContracts submitQuery={submitQuery} >
+              {renderApiField}
+            </LastNContracts>
+          )) ||
+          (resource.split(", ")[0] === "Firm" && (
+            <LastNFirms submitQuery={submitQuery} >
+              {renderApiField}
+            </LastNFirms>
+          )) ||
           (resource.split(", ")[0] === "Opportunity" && (
-            <LastNOpportunities submitQuery={submitQuery} graphqlURL={graphqlURL}>
+            <LastNOpportunities submitQuery={submitQuery} >
               {renderApiField}
             </LastNOpportunities>
+          )) ||
+          (resource.split(", ")[0] === "Policy" && (
+            <LastNPolicies submitQuery={submitQuery} >
+              {renderApiField}
+            </LastNPolicies>
           ))
         )}
         {type === "mutate" && (
           (resource.split(", ")[0] === "Advisor" && (
-            <CreateAdvisor onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
+            <CreateAdvisor onError={onError} submitQuery={submitQuery} >
               {renderApiField}
             </CreateAdvisor>
           )) ||
           (resource.split(", ")[0] === "Client" && (
-            <CreateClient onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
+            <CreateClient onError={onError} submitQuery={submitQuery} >
               {renderApiField}
             </CreateClient>
           )) ||
           (resource.split(", ")[0] === "Contact" && (
-            <CreateContact onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
+            <CreateContact onError={onError} submitQuery={submitQuery} >
               {renderApiField}
             </CreateContact>
           )) ||
+          (resource.split(", ")[0] === "Contract" && (
+            <CreateContract onError={onError} submitQuery={submitQuery} >
+              {renderApiField}
+            </CreateContract>
+          )) ||
+          (resource.split(", ")[0] === "Firm" && (
+            <CreateFirm onError={onError} submitQuery={submitQuery} >
+              {renderApiField}
+            </CreateFirm>
+          )) ||
           (resource.split(", ")[0] === "Opportunity" && (
-            <CreateOpportunity onError={onError} submitQuery={submitQuery} apiKey={apiKey} graphqlURL={graphqlURL}>
+            <CreateOpportunity onError={onError} submitQuery={submitQuery} >
               {renderApiField}
             </CreateOpportunity>
+          )) ||
+          (resource.split(", ")[0] === "Policy" && (
+            <CreatePolicy onError={onError} submitQuery={submitQuery} >
+              {renderApiField}
+            </CreatePolicy>
           ))
         )}
       </div>
-    </div>
+    </GraphqlContext.Provider>
   );
 }

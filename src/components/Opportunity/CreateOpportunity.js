@@ -19,13 +19,10 @@ import Form from "../../Form";
 import Autocomplete from '@material-ui/lab/Autocomplete';
 import TextField from "../../TextField";
 import InlineFields from "../../InlineFields";
-import AdvisorsList from "../../helpers/AdvisorsList"
-import CarriersList from "../../helpers/CarriersList"
-import ClientsList from "../../helpers/ClientsList"
-import CompaniesList from "../../helpers/CompaniesList"
 import OptionsList from "../../helpers/OptionsList"
 import ProductTypesList from "../../helpers/ProductTypesList"
-import VendorsList from "../../helpers/VendorsList"
+import SearchQuery from "../../helpers/SearchQuery"
+import { GraphqlContext } from "../../App"
 
 const createOpportunity = `
   mutation CreateOpportunity($attributes: OpportunityInput!) {
@@ -33,8 +30,17 @@ const createOpportunity = `
       errors
       resource {
         id
-        amount
         name
+        amount
+        opportunityStatus
+        productType {
+          id
+          name
+        }
+        opportunityType {
+          id
+          name
+        }
         policyHolders {
           id
           client {
@@ -90,7 +96,8 @@ const policyHolderTypeGroups = {
 }
 
 
-export default function CreateOpportunity({ children, onError, submitQuery, apiKey, graphqlURL }) {
+export default function CreateOpportunity({ children, onError, submitQuery }) {
+  const context = React.useContext(GraphqlContext);
   const [opportunities, setOpportunities] = useState([]);
   const [data, setData] = useState({opportunityStatus: "Open", opportunityType: "OpportunityType::::Quote", policyHolderType: ""});
   const [options, setOptions] = useState({
@@ -106,60 +113,33 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
   const [policyHolderTypeList, setPolicyHolderTypeList] = useState([]);
   const [filteredPolicyHolderTypes, setFilteredPolicyHolderTypes] = useState([]);
 
-  const [clientsList, setClientsList] = useState([]);
-  const [companiesList, setCompaniesList] = useState([]);
   const [policyHolderConList, setPolicyHolderConList] = useState([]);
 
-  const [carriersList, setCarriersList] = useState([]);
-  const [vendorsList, setVendorsList] = useState([]);
   const [recommendationOwnerList, setRecommendationOwnerList] = useState([]);
 
   const [advisorsList, setAdvisorsList] = useState([]);
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+  const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   useEffect(() => {
     async function fetchData(){
-      let result = await ProductTypesList(submitQuery, apiKey);
+      let result = await ProductTypesList(submitQuery, context.apiKey);
       result = result && result.productTypes ? result.productTypes.filter(el => el.productClassId === 1) : []
       setProductTypesList(result);
 
-      result = await OptionsList(submitQuery, apiKey, "OpportunityStatus");
+      result = await OptionsList(submitQuery, context.apiKey, "OpportunityStatus");
       setOpportunityStatusList(result && result.options ? result.options : []);
 
-      result = await OptionsList(submitQuery, apiKey, "OpportunityType");
+      result = await OptionsList(submitQuery, context.apiKey, "OpportunityType");
       setOpportunityTypeList(result && result.options ? result.options : []);
 
-      result = await OptionsList(submitQuery, apiKey, "PolicyHolderType");
+      result = await OptionsList(submitQuery, context.apiKey, "PolicyHolderType");
       setPolicyHolderTypeList(result && result.options ? result.options : []);
-
-      result = await AdvisorsList(submitQuery, apiKey);
-      setAdvisorsList(result && result.advisors ? result.advisors : [])
-
-      result = await ClientsList(submitQuery, apiKey);
-      setClientsList(result && result.clients ? result.clients : [])
-
-      result = await CompaniesList(submitQuery, apiKey);
-      setCompaniesList(result && result.companies ? result.companies : []);
-
-      result = await CarriersList(submitQuery, apiKey);
-      setCarriersList(result && result.carriers ? result.carriers : []);
-
-      result = await VendorsList(submitQuery, apiKey);
-      setVendorsList(result && result.vendors ? result.vendors : []);
     }
 
     fetchData();
 
-  }, [apiKey]);
-
-  useEffect(() => {
-    setRecommendationOwnerList(options.recommendationOwnerType === "Carrier" ? carriersList : vendorsList);
-  }, [options.recommendationOwnerType, carriersList, vendorsList]);
-
-  useEffect(() => {
-    setPolicyHolderConList(options.policyHolderConType === "Client" ? clientsList : companiesList);
-  }, [options.policyHolderConType, clientsList, companiesList]);
+  }, [context.apiKey]);
 
   useEffect(() => {
     const productTypeName = productTypesList.filter(el => el.id === data.productType)[0]?.name;
@@ -167,15 +147,34 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
     setFilteredPolicyHolderTypes(result);
   }, [data.productType]);
 
+  const handleKeyPressChange = async (value, resource) => {
+    const results =  await SearchQuery(submitQuery, context.apiKey, value, [resource]);
+    if (resource === "Advisor") {
+      setAdvisorsList(results.results ? results.results : []);
+    }
+    else if (["Client", "Company"].indexOf(resource) !== -1) {
+      setPolicyHolderConList(results.results ? results.results : []);
+    }
+    else if (["Carrier", "Vendor"].indexOf(resource) !== -1) {
+      setRecommendationOwnerList(results.results ? results.results : []);
+    }
+  }
+
   const handleChange = (name, value) => {
     setData((d) => ({ ...d, [name]: value }));
   }
 
+
   const handleOptionsChange = (name, value) => {
     setOptions((d) => ({ ...d, [name]: value }));
+
+    if (name === "policyHolderConType")
+      setPolicyHolderConList([]);
+    else if (name === "recommendationOwnerType")
+      setRecommendationOwnerList([]);
   }
 
-  const inlineOpportunityOne = [
+  const inlineOpportunity = [
     { field:
       <TextField
         name="amount"
@@ -186,11 +185,8 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
         fullWidth
       />,
       width: "50%"
-    }
-  ]
-
-  if (productTypesList.length)
-    inlineOpportunityOne.push({
+    },
+    {
       field: (
         <Autocomplete
           options={productTypesList}
@@ -215,51 +211,51 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
       ),
       width: "50%",
       marginLeft: "1%"
-    });
+    },
+    { field: opportunityStatusList.length ? (
+        <>
+          <FormControl variant="outlined" fullWidth>
+          <InputLabel>Opportunity Status</InputLabel>
+          <Select
+          value={data.opportunityStatus}
+          onChange={(e, value) => handleChange("opportunityStatus", value.props.value)}
+          label="Opportunity Status"
+          name= "opportunityStatus"
+          required
+          >
+          {opportunityStatusList.map(item => (
+            <MenuItem key={item.id} value={item.name}>{item.name}</MenuItem>
+          ))}
+          </Select>
+          </FormControl>
+        </>
+      ) : null,
+      width: "50%"
+    },
+    { field: opportunityTypeList.length ? (
+        <>
+          <FormControl variant="outlined" fullWidth>
+          <InputLabel>Opportunity Type</InputLabel>
+          <Select
+          value={data.opportunityType}
+          onChange={(e, value) => handleChange("opportunityType", value.props.value)}
+          label="Opportunity Type"
+          name= "opportunityType"
+          >
+          {opportunityTypeList.map(item => (
+            <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+          ))}
+          </Select>
+          </FormControl>
+        </>
+      ) : null,
+      width: "50%",
+      marginLeft: "1%"
+    },
+  ];
 
-    const inlineOpportunityTwo = [
-      { field: opportunityStatusList.length ? (
-          <>
-            <FormControl variant="outlined" fullWidth>
-            <InputLabel>Opportunity Status</InputLabel>
-            <Select
-            value={data.opportunityStatus}
-            onChange={(e, value) => handleChange("opportunityStatus", value.props.value)}
-            label="Opportunity Status"
-            name= "opportunityStatus"
-            >
-            {opportunityStatusList.map(item => (
-              <MenuItem key={item.id} value={item.name}>{item.name}</MenuItem>
-            ))}
-            </Select>
-            </FormControl>
-          </>
-        ) : null,
-        width: "50%"
-      },
-      { field: opportunityTypeList.length ? (
-          <>
-            <FormControl variant="outlined" fullWidth>
-            <InputLabel>Opportunity Type</InputLabel>
-            <Select
-            value={data.opportunityType}
-            onChange={(e, value) => handleChange("opportunityType", value.props.value)}
-            label="Opportunity Type"
-            name= "opportunityType"
-            >
-            {opportunityTypeList.map(item => (
-              <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
-            ))}
-            </Select>
-            </FormControl>
-          </>
-        ) : null,
-        width: "50%",
-        marginLeft: "1%"
-      },
-    ];
-
-    const inlinePolicyHolder = [{
+  const inlinePolicyHolder = [
+    {
       field: (
         <>
           <FormControl variant="outlined" fullWidth>
@@ -277,37 +273,38 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
         </>
       ),
       width: "40%"
-    }];
+    },
+    {
+      field: (
+        <Autocomplete
+          options={policyHolderConList}
+          autoHighlight
+          getOptionLabel={(option) => option.name}
+          renderOption={(option) => option.name}
+          name="policyHolderConnection"
+          onChange={(e, value) => handleChange("policyHolderConnection", value ? value.id : null)}
+          noOptionsText = ""
+          renderInput={(params) => (
+            <TextField
+              {...params}
+              label={`Find ${options.policyHolderConType}`}
+              variant="outlined"
+              inputProps={{
+                ...params.inputProps,
+              }}
+              onChange={(e, value) => handleKeyPressChange(value, options.policyHolderConType)}
+              required
+            />
+          )}
+        />
+      ),
+      width: "60%",
+      marginLeft: "1%"
+    }
+  ];
 
-    if (policyHolderConList.length)
-      inlinePolicyHolder.push({
-        field: (
-          <Autocomplete
-            options={policyHolderConList}
-            autoHighlight
-            getOptionLabel={(option) => option.name}
-            renderOption={(option) => option.name}
-            name="policyHolderConnection"
-            onChange={(e, value) => handleChange("policyHolderConnection", value ? value.id : null)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={options.policyHolderConType}
-                variant="outlined"
-                inputProps={{
-                  ...params.inputProps,
-                }}
-                onChange={() => {}}
-                required
-              />
-            )}
-          />
-        ),
-        width: "60%",
-        marginLeft: "1%"
-      })
-
-    const inlineRecommendationOne = [{
+  const inlineRecommendation = [
+    {
       field: (
         <>
           <FormControl variant="outlined" fullWidth>
@@ -325,103 +322,101 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
         </>
       ),
       width: "40%"
-    }];
-
-    if (recommendationOwnerList.length)
-      inlineRecommendationOne.push({
-        field: (
-          <Autocomplete
-            options={recommendationOwnerList}
-            autoHighlight
-            getOptionLabel={(option) => option.name}
-            renderOption={(option) => option.name}
-            name="recommendationOwner"
-            onChange={(e, value) => handleChange("recommendationOwner", value ? value.id : null)}
-            renderInput={(params) => (
-              <TextField
-                {...params}
-                label={options.recommendationOwnerType}
-                variant="outlined"
-                inputProps={{
-                  ...params.inputProps,
-                }}
-                onChange={() => {}}
-                required
-              />
-            )}
-          />
-        ),
-        width: "60%",
-        marginLeft: "1%"
-      })
-
-      const inlineRecommendationTwo = [
-        {
-          field: (
+    },
+    {
+      field: (
+        <Autocomplete
+          options={recommendationOwnerList}
+          autoHighlight
+          getOptionLabel={(option) => option.name}
+          renderOption={(option) => option.name}
+          name="recommendationOwner"
+          noOptionsText = ""
+          onChange={(e, value) => handleChange("recommendationOwner", value ? value.id : null)}
+          renderInput={(params) => (
             <TextField
-              name="recAmount"
-              label="Amount"
-              onChange={handleChange}
-              type="number"
-              fullWidth
+              {...params}
+              label={`Find ${options.recommendationOwnerType}`}
+              variant="outlined"
+              inputProps={{
+                ...params.inputProps,
+              }}
+              onChange={(e, value) => handleKeyPressChange(value, options.recommendationOwnerType)}
+              required
             />
-          ),
-          width: "25%"
-        },
-        {
-          field: (
-            <TextField
-              name="recModalFactorPercent"
-              label="Modal Factor Percent"
-              onChange={handleChange}
-              type="number"
-              fullWidth
-              InputProps={{ inputProps: {  max: 100 } }}
-            />
-          ),
-          width: "25%",
-          marginLeft: "1%"
-        },
-        {
-          field: (
-            <TextField
-              name="recModalPremium"
-              label="Modal Premium"
-              onChange={handleChange}
-              type="number"
-              fullWidth
-            />
-          ),
-          width: "25%",
-          marginLeft: "1%"
-        },
-        {
-          field: (
-            <TextField
-              name="recScenarioCount"
-              label="Scenario Count"
-              onChange={handleChange}
-              type="number"
-              fullWidth
-            />
-          ),
-          width: "25%",
-          marginLeft: "1%"
-        },
-        {
-          field: (
-            <TextField
-              name="recNumber"
-              label="number"
-              onChange={handleChange}
-              type="number"
-              fullWidth
-            />
-          ),
-          width: "25%",
-          marginLeft: "1%"
-        }
-      ]
+          )}
+        />
+      ),
+      width: "60%",
+      marginLeft: "1%"
+    },
+    {
+      field: (
+        <TextField
+          name="recAmount"
+          label="Amount"
+          onChange={handleChange}
+          type="number"
+          fullWidth
+          required
+        />
+      ),
+      width: "25%"
+    },
+    {
+      field: (
+        <TextField
+          name="recScenarioCount"
+          label="Scenario Count"
+          onChange={handleChange}
+          type="number"
+          fullWidth
+          required
+        />
+      ),
+      width: "25%",
+      marginLeft: "1%"
+    },
+    {
+      field: (
+        <TextField
+          name="recModalFactorPercent"
+          label="Modal Factor Percent"
+          onChange={handleChange}
+          type="number"
+          fullWidth
+          InputProps={{ inputProps: {  max: 100 } }}
+        />
+      ),
+      width: "25%",
+      marginLeft: "1%"
+    },
+    {
+      field: (
+        <TextField
+          name="recModalPremium"
+          label="Modal Premium"
+          onChange={handleChange}
+          type="number"
+          fullWidth
+        />
+      ),
+      width: "25%",
+      marginLeft: "1%"
+    },
+    {
+      field: (
+        <TextField
+          name="recNumber"
+          label="number"
+          onChange={handleChange}
+          type="number"
+          fullWidth
+        />
+      ),
+      width: "25%"
+    }
+  ];
 
   return (
     <div>
@@ -520,8 +515,7 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
           onChange={handleChange}
           required
         />
-        <InlineFields fields={inlineOpportunityOne}/>
-        <InlineFields fields={inlineOpportunityTwo}/>
+        <InlineFields fields={inlineOpportunity}/>
         <FormControlLabel
           control={
             <Checkbox
@@ -533,7 +527,7 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
           }
           label="Add Policy Holder"
         />
-        {options.policyHolder && policyHolderTypeList.length  > 0 && (
+        {options.policyHolder && (
           <>
             <InlineFields fields={inlinePolicyHolder}/>
             <FormControl variant="outlined" fullWidth>
@@ -563,11 +557,8 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
           }
           label="Add Recommendation"
         />
-        {options.recommendation && (carriersList.length + vendorsList.length)  > 0 && (
-          <>
-            <InlineFields fields={inlineRecommendationOne}/>
-            <InlineFields fields={inlineRecommendationTwo}/>
-          </>
+        {options.recommendation && (
+          <InlineFields fields={inlineRecommendation}/>
         )}
         <FormControlLabel
           control={
@@ -580,23 +571,24 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
           }
           label="Add Writing Advisor"
         />
-        {options.writingAdvisor && advisorsList.length > 0 && (
+        {options.writingAdvisor && (
           <Autocomplete
             options={advisorsList}
             autoHighlight
             getOptionLabel={(option) => option.name}
             renderOption={(option) => option.name}
             name="writingAdvisor"
+            noOptionsText = ""
             onChange={(e, value) => handleChange("writingAdvisor", value ? value.id : null)}
             renderInput={(params) => (
               <TextField
                 {...params}
-                label="Writing Advisor"
+                label="Find Writing Advisor"
                 variant="outlined"
                 inputProps={{
                   ...params.inputProps,
                 }}
-                onChange={() => {}}
+                onChange={(e, value) => handleKeyPressChange(value, "Advisor")}
                 required
               />
             )}
@@ -608,6 +600,10 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Product Type</TableCell>
               <TableCell>Policy Holders</TableCell>
               <TableCell>Writing Advisors</TableCell>
               <TableCell>Recommendations</TableCell>
@@ -624,6 +620,18 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
                     >
                       {opportunity.name}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.opportunityStatus}
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.opportunityType?.name}
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.amount}
+                  </TableCell>
+                  <TableCell>
+                    {opportunity.productType.name}
                   </TableCell>
                   <TableCell>
                     {
@@ -653,7 +661,7 @@ export default function CreateOpportunity({ children, onError, submitQuery, apiK
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={4} style={{ textAlign: "center" }}>
+                <TableCell colSpan={8} style={{ textAlign: "center" }}>
                   No opportunities
                 </TableCell>
               </TableRow>

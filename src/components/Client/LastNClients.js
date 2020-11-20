@@ -10,6 +10,7 @@ import {
 } from "@material-ui/core";
 import Form from "../../Form";
 import TextField from "../../TextField";
+import { GraphqlContext } from "../../App"
 
 const fetchClients = `
   query LastNClients($limit: Int!) {
@@ -49,11 +50,12 @@ const fetchClients = `
   }
 `;
 
-export default function LastNClients({ children, submitQuery, graphqlURL }) {
+export default function LastNClients({ children, submitQuery }) {
+  const context = React.useContext(GraphqlContext);
   const [clients, setClients] = useState([]);
   const [data, setData] = useState({});
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+  const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
 
   const handleChange = (name, value) =>

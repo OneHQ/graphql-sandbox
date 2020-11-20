@@ -10,12 +10,23 @@ import {
 } from "@material-ui/core";
 import Form from "../../Form";
 import TextField from "../../TextField";
+import { GraphqlContext } from "../../App";
 
 const fetchOpportunities = `
   query LastNOpportunities($limit: Int!) {
     opportunities(limit: $limit) {
       id
       name
+      amount
+      opportunityStatus
+      productType {
+        id
+        name
+      }
+      opportunityType {
+        id
+        name
+      }
       policyHolders {
         id
         client {
@@ -56,11 +67,12 @@ const fetchOpportunities = `
   }
 `;
 
-export default function LastNOpportunities({ children, submitQuery, graphqlURL }) {
+export default function LastNOpportunities({ children, submitQuery }) {
+  const context = React.useContext(GraphqlContext);
   const [opportunities, setOpportunities] = useState([]);
   const [data, setData] = useState({});
 
-  const url = graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
+  const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
 
   const handleChange = (name, value) =>
     setData((d) => ({ ...d, [name]: value }));
@@ -94,6 +106,10 @@ export default function LastNOpportunities({ children, submitQuery, graphqlURL }
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
+              <TableCell>Status</TableCell>
+              <TableCell>Type</TableCell>
+              <TableCell>Amount</TableCell>
+              <TableCell>Product Type</TableCell>
               <TableCell>Policy Holders</TableCell>
               <TableCell>Writing Advisors</TableCell>
               <TableCell>Recommendations</TableCell>
@@ -110,6 +126,18 @@ export default function LastNOpportunities({ children, submitQuery, graphqlURL }
                     >
                       {opportunity.name}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.opportunityStatus}
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.opportunityType?.name}
+                  </TableCell>
+                  <TableCell>
+                      {opportunity.amount}
+                  </TableCell>
+                  <TableCell>
+                    {opportunity.productType.name}
                   </TableCell>
                   <TableCell>
                     {
@@ -139,7 +167,7 @@ export default function LastNOpportunities({ children, submitQuery, graphqlURL }
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={4} style={{ textAlign: "center" }}>
+                <TableCell colSpan={8} style={{ textAlign: "center" }}>
                   No opportunities
                 </TableCell>
               </TableRow>

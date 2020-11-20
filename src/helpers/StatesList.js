@@ -3,6 +3,7 @@ const fetchStates = `
     states {
       id
       name
+      abbreviation
     }
   }
 `;

@@ -12,10 +12,12 @@ import Form from "../../Form";
 import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
-const fetchContacts = `
-  query LastNContacts($limit: Int!) {
-    contacts(limit: $limit) {
+const fetchFirms = `
+  query LastNFirms($limit: Int!) {
+    firms(limit: $limit) {
       id
+      name
+      type
       addresses {
         id
         lineOne
@@ -27,10 +29,6 @@ const fetchContacts = `
         }
         zipcode
       }
-      demographic {
-        firstName
-        lastName
-      }
       emails {
         address
       }
@@ -41,9 +39,9 @@ const fetchContacts = `
   }
 `;
 
-export default function LastNContacts({ children, submitQuery }) {
+export default function LastNFirms({ children, submitQuery }) {
   const context = React.useContext(GraphqlContext);
-  const [contacts, setContacts] = useState([]);
+  const [firms, setFirms] = useState([]);
   const [data, setData] = useState({});
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
@@ -55,15 +53,15 @@ export default function LastNContacts({ children, submitQuery }) {
     <div>
       <Form
         onSubmit={async () => {
-          const response = await submitQuery(fetchContacts, {
+          const response = await submitQuery(fetchFirms, {
             variables: { limit: parseInt(data.limit, 10) }
           });
-          if (response) setContacts(response.contacts);
+          if (response) setFirms(response.firms);
         }}
         submitText={
           data.limit
-            ? `Query the last ${data.limit} contacts`
-            : "Query contacts"
+            ? `Query the last ${data.limit} firms`
+            : "Query firms"
         }
       >
         {children}
@@ -80,45 +78,44 @@ export default function LastNContacts({ children, submitQuery }) {
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
-              <TableCell>First Name</TableCell>
-              <TableCell>Last Name</TableCell>
+              <TableCell>Type</TableCell>
               <TableCell>Phone #</TableCell>
               <TableCell>Email</TableCell>
               <TableCell>Address</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {contacts.length ? (
-              contacts.map((contact) => (
-                <TableRow key={contact.id}>
+            {firms.length ? (
+              firms.map((firm) => (
+                <TableRow key={firm.id}>
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`${url}/contacts/${contact.id}`}
+                      href={`${url}/firms/${firm.id}`}
                     >
-                      {contact.demographic.firstName}{" "}
-                      {contact.demographic.lastName}
+                      {firm.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{contact.demographic.firstName}</TableCell>
-                  <TableCell>{contact.demographic.lastName}</TableCell>
                   <TableCell>
-                    {contact.phones.map((p) => p.number).join(", ")}
+                    {firm.type}
                   </TableCell>
                   <TableCell>
-                    {contact.emails.map((p) => p.address).join(", ")}
+                    {firm.phones.map((p) => p.number).join(", ")}
                   </TableCell>
                   <TableCell>
-                    {contact.addresses.map((p) =>
-                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>)
-                    }
+                    {firm.emails.map((p) => p.address).join(", ")}
+                  </TableCell>
+                  <TableCell>
+                    {firm.addresses.map((p) =>
+                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
-                  No contacts
+                <TableCell colSpan={7} style={{ textAlign: "center" }}>
+                  No firms
                 </TableCell>
               </TableRow>
             )}

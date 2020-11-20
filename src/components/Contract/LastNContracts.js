@@ -12,38 +12,31 @@ import Form from "../../Form";
 import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
-const fetchContacts = `
-  query LastNContacts($limit: Int!) {
-    contacts(limit: $limit) {
+const fetchContracts = `
+  query LastNContracts($limit: Int!) {
+    contracts(limit: $limit) {
       id
-      addresses {
+      name
+      writingNumber
+      carrier {
         id
-        lineOne
-        lineTwo
-        city
-        state {
-          id
-          name
-        }
-        zipcode
+        name
       }
-      demographic {
-        firstName
-        lastName
+      advisor {
+        id
+        name
       }
-      emails {
-        address
-      }
-      phones {
-        number
+      productTypes {
+        id
+        name
       }
     }
   }
 `;
 
-export default function LastNContacts({ children, submitQuery }) {
+export default function LastNContracts({ children, submitQuery }) {
   const context = React.useContext(GraphqlContext);
-  const [contacts, setContacts] = useState([]);
+  const [contracts, setContracts] = useState([]);
   const [data, setData] = useState({});
 
   const url = context.graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com"  : "https://agencieshq.com"
@@ -55,15 +48,15 @@ export default function LastNContacts({ children, submitQuery }) {
     <div>
       <Form
         onSubmit={async () => {
-          const response = await submitQuery(fetchContacts, {
+          const response = await submitQuery(fetchContracts, {
             variables: { limit: parseInt(data.limit, 10) }
           });
-          if (response) setContacts(response.contacts);
+          if (response) setContracts(response.contracts);
         }}
         submitText={
           data.limit
-            ? `Query the last ${data.limit} contacts`
-            : "Query contacts"
+            ? `Query the last ${data.limit} contracts`
+            : "Query contracts"
         }
       >
         {children}
@@ -80,45 +73,42 @@ export default function LastNContacts({ children, submitQuery }) {
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
-              <TableCell>First Name</TableCell>
-              <TableCell>Last Name</TableCell>
-              <TableCell>Phone #</TableCell>
-              <TableCell>Email</TableCell>
-              <TableCell>Address</TableCell>
+              <TableCell>Writing Number</TableCell>
+              <TableCell>Advisor</TableCell>
+              <TableCell>Carrier</TableCell>
+              <TableCell>Product Type</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {contacts.length ? (
-              contacts.map((contact) => (
-                <TableRow key={contact.id}>
+            {contracts.length ? (
+              contracts.map((contract) => (
+                <TableRow key={contract.id}>
                   <TableCell>
                     <Link
                       target="_blank"
-                      href={`${url}/contacts/${contact.id}`}
+                      href={`${url}/contracts/${contract.id}`}
                     >
-                      {contact.demographic.firstName}{" "}
-                      {contact.demographic.lastName}
+                      {contract.name}
                     </Link>
                   </TableCell>
-                  <TableCell>{contact.demographic.firstName}</TableCell>
-                  <TableCell>{contact.demographic.lastName}</TableCell>
                   <TableCell>
-                    {contact.phones.map((p) => p.number).join(", ")}
+                    {contract.writingNumber}
                   </TableCell>
                   <TableCell>
-                    {contact.emails.map((p) => p.address).join(", ")}
+                    {contract.advisor.name}
                   </TableCell>
                   <TableCell>
-                    {contact.addresses.map((p) =>
-                      <p key={`add${p.id}`}>{[p.lineOne, p.lineTwo, p.city, p.state?.name, p.zipcode].filter(el => el).join(", ")}</p>)
-                    }
+                    {contract.carrier.name}
+                  </TableCell>
+                  <TableCell>
+                    {contract.productTypes.map((p) => p.name).join(", ")}
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow key="defaultRow">
-                <TableCell colSpan={6} style={{ textAlign: "center" }}>
-                  No contacts
+                <TableCell colSpan={5} style={{ textAlign: "center" }}>
+                  No contracts
                 </TableCell>
               </TableRow>
             )}
