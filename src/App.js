@@ -42,7 +42,7 @@ export default function App() {
   const submitQuery = useGraphql({
     apiKey,
     onError: setError,
-      url: graphqlURL === "staging" ? " http://localhost:3000/gql"  : "https://agencieshq.com/graphql"
+      url: graphqlURL === "staging" ? "https://agencieshq-staging.agencieshq.com/graphql"  : "https://agencieshq.com/graphql"
   });
 
   useEffect(() => {
