@@ -149,10 +149,11 @@ export default function CreateClient({ children, onError, submitQuery }) {
           }
 
           const dataFieldsKeys = selectedFields.map(el => el.name);
+          const auxFieldsListArray = Object.fromEntries(Object.entries(fieldsList).map(([key, value]) => [value.name, value]));
           if (dataFieldsKeys.length) {
             attributes.fieldAttributes = [];
             for (const key of dataFieldsKeys) {
-              const item = fieldsList.filter(e => e.name === key)[0];
+              const item = auxFieldsListArray[key];
               attributes.fieldAttributes.push({
                 fieldId: item.id,
                 booleanValue: item.style === "checkbox" ? dataFields[key] : null,

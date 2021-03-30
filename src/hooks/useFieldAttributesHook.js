@@ -26,7 +26,7 @@ export default function useFieldAttributesHook(dataFields, handleFieldChange, se
               control={
                 <Checkbox
                 checked={dataFields[item.name]}
-                onChange={() => handleFieldChange(item.name, !dataFields[item.name])}
+                onChange={e => handleFieldChange(item.name, e.target.checked)}
                 inputProps={{ 'aria-label': 'primary checkbox' }}
                 label= {item.name}
                 />
