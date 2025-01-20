@@ -67,7 +67,7 @@ export default function CreateFirm({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       let result = await StatesList(submitQuery, context.apiKey);
-      setStatesList(result && result.states ? result.states : [])
+      setStatesList(result)
     }
 
     debounceFetch(fetchData);
@@ -154,7 +154,7 @@ export default function CreateFirm({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createFirm.errors;
             const resource = response.createFirm.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setFirms((firms) => [...firms, resource]);
           }
         }}

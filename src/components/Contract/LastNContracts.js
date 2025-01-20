@@ -13,22 +13,23 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
 const fetchContracts = `
-  query LastNContracts($limit: Int!) {
-    contracts(limit: $limit) {
-      id
-      name
-      writingNumber
-      carrier {
+  query LastNContracts($first: Int!) {
+    contracts(first: $first) {
+      nodes {
         id
         name
-      }
-      advisor {
-        id
-        name
-      }
-      productTypes {
-        id
-        name
+        carrier {
+          id
+          name
+        }
+        advisor {
+          id
+          name
+        }
+        productTypes {
+          id
+          name
+        }
       }
     }
   }
@@ -49,9 +50,9 @@ export default function LastNContracts({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchContracts, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setContracts(response.contracts);
+          if (response) setContracts(response.contracts.nodes);
         }}
         submitText={
           data.limit
@@ -73,7 +74,6 @@ export default function LastNContracts({ children, submitQuery }) {
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
-              <TableCell>Writing Number</TableCell>
               <TableCell>Advisor</TableCell>
               <TableCell>Carrier</TableCell>
               <TableCell>Product Type</TableCell>
@@ -90,9 +90,6 @@ export default function LastNContracts({ children, submitQuery }) {
                     >
                       {contract.name}
                     </Link>
-                  </TableCell>
-                  <TableCell>
-                    {contract.writingNumber}
                   </TableCell>
                   <TableCell>
                     {contract.advisor.name}

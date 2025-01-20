@@ -13,53 +13,52 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App";
 
 const fetchOpportunities = `
-  query LastNOpportunities($limit: Int!) {
-    opportunities(limit: $limit) {
-      id
-      name
-      amount
-      opportunityStatus
-      productType {
+  query LastNOpportunities($first: Int!) {
+    opportunities(first: $first) {
+      nodes {
         id
         name
-      }
-      opportunityType {
-        id
-        name
-      }
-      policyHolders {
-        id
-        client {
-          id
-          name
-        }
-        company {
-          id
-          name
-        }
-      }
-      writingAdvisors {
-        id
-        advisor {
-          id
-          name
-        }
-      }
-      recommendations {
-        id
         amount
-        modalFactorPercent
-        modalPremium
-        scenarioCount
-        number
-        owner {
-          ... on Carrier {
+        opportunityStatus
+        productType {
+          id
+          name
+        }
+        opportunityType
+        policyHolders {
+          id
+          client {
             id
             name
           }
-          ... on Vendor {
+          company {
             id
             name
+          }
+        }
+        writingAdvisors {
+          id
+          advisor {
+            id
+            name
+          }
+        }
+        recommendations {
+          id
+          amount
+          modalFactorPercent
+          modalPremium
+          scenarioCount
+          number
+          owner {
+            ... on Carrier {
+              id
+              name
+            }
+            ... on Vendor {
+              id
+              name
+            }
           }
         }
       }
@@ -82,9 +81,9 @@ export default function LastNOpportunities({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchOpportunities, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setOpportunities(response.opportunities);
+          if (response) setOpportunities(response.opportunities.nodes);
         }}
         submitText={
           data.limit
@@ -131,7 +130,7 @@ export default function LastNOpportunities({ children, submitQuery }) {
                       {opportunity.opportunityStatus}
                   </TableCell>
                   <TableCell>
-                      {opportunity.opportunityType?.name}
+                      {opportunity.opportunityType}
                   </TableCell>
                   <TableCell>
                       {opportunity.amount}

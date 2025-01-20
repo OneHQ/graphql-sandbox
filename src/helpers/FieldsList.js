@@ -1,12 +1,14 @@
 const fetchFields = `
-  query fieldsList($type: String) {
+  query fieldsList($type: FieldKind) {
     fields(type: $type) {
-      id
-      name
-      style
-      selectOptions {
+      nodes {
         id
         name
+        style
+        selectOptions {
+          id
+          name
+        }
       }
     }
   }
@@ -18,7 +20,7 @@ export default async function FieldsList(submitQuery, apiKey, type) {
   if(apiKey) {
     try {
       const result = await submitQuery(fetchFields, {variables: {type: type}});
-      return result
+      return result.fields?.nodes || []
     } catch (error) {
       console.log(error);
     }

@@ -13,38 +13,40 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
 const fetchAdvisors = `
-  query LastNAdvisors($limit: Int!) {
-    advisors(limit: $limit) {
-      id
-      addresses {
+  query LastNAdvisors($first: Int!) {
+    advisors(first: $first) {
+      nodes {
         id
-        lineOne
-        lineTwo
-        city
-        state {
+        addresses {
           id
-          name
+          lineOne
+          lineTwo
+          city
+          state {
+            id
+            name
+          }
+          zipcode
         }
-        zipcode
-      }
-      demographic {
-        firstName
-        lastName
-      }
-      emails {
-        address
-      }
-      fieldAttributes {
-        id
-        value
-        field {
+        demographic {
+          firstName
+          lastName
+        }
+        emails {
+          address
+        }
+        fieldAttributes {
           id
-          name
-          style
+          value
+          field {
+            id
+            name
+            style
+          }
         }
-      }
-      phones {
-        number
+        phones {
+          number
+        }
       }
     }
   }
@@ -65,9 +67,9 @@ export default function LastNAdvisors({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchAdvisors, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setAdvisors(response.advisors);
+          if (response) setAdvisors(response.advisors.nodes);
         }}
         submitText={
           data.limit
