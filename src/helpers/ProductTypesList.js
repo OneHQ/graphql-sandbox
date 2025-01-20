@@ -1,20 +1,22 @@
 const fetchStates = `
   query productTypesList {
     productTypes {
-      id
-      name
-      productClassId
+      nodes {
+        id
+        name
+        productClassId
+      }
     }
   }
 `;
 
 
-export default async function StatesList(submitQuery, apiKey) {
+export default async function ProductTypesList(submitQuery, apiKey) {
 
   if(apiKey) {
     try {
       const result = await submitQuery(fetchStates, {});
-      return result
+      return result.productTypes.nodes || []
     } catch (error) {
       console.log(error);
     }

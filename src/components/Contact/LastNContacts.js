@@ -13,29 +13,31 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
 const fetchContacts = `
-  query LastNContacts($limit: Int!) {
-    contacts(limit: $limit) {
-      id
-      addresses {
+  query LastNContacts($first: Int!) {
+    contacts(first: $first) {
+      nodes {
         id
-        lineOne
-        lineTwo
-        city
-        state {
+        addresses {
           id
-          name
+          lineOne
+          lineTwo
+          city
+          state {
+            id
+            name
+          }
+          zipcode
         }
-        zipcode
-      }
-      demographic {
-        firstName
-        lastName
-      }
-      emails {
-        address
-      }
-      phones {
-        number
+        demographic {
+          firstName
+          lastName
+        }
+        emails {
+          address
+        }
+        phones {
+          number
+        }
       }
     }
   }
@@ -56,9 +58,9 @@ export default function LastNContacts({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchContacts, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setContacts(response.contacts);
+          if (response) setContacts(response.contacts.nodes);
         }}
         submitText={
           data.limit

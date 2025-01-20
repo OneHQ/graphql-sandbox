@@ -73,7 +73,7 @@ const createPolicy = `
 export default function CreatePolicy({ children, onError, submitQuery }) {
   const context = React.useContext(GraphqlContext);
   const [policies, setPolicies] = useState([]);
-  const [data, setData] = useState({policyStatus: "PolicyStatus::::Submitted", policyType: "Application", productType: "1", signedDate: new Date()});
+  const [data, setData] = useState({policyStatus: "PolicyStatus::::Submitted", policyType: "Application", productType: 1, signedDate: new Date()});
   const [options, setOptions] = useState({
     advisor: false,
     client: false,
@@ -99,17 +99,17 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
-      result = result && result.productTypes ? result.productTypes.filter(el => el.productClassId === 1) : []
+      result = result.filter(el => el.productClassId === 1)
       setProductTypesList(result);
 
       result = await StatesList(submitQuery, context.apiKey);
-      setStatesList(result && result.states ? result.states : [])
+      setStatesList(result)
 
       result = await OptionsList(submitQuery, context.apiKey, "PolicyStatus");
-      setPolicyStatusList(result && result.options ? result.options : []);
+      setPolicyStatusList(result);
 
       result = await OptionsList(submitQuery, context.apiKey, "PolicyType");
-      setPolicyTypeList(result && result.options ? result.options : []);
+      setPolicyTypeList(result);
     }
 
     debounceFetch(fetchData);
@@ -118,8 +118,8 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
 
   useEffect(() => {
     async function fetchProducts(){
-      let result = await ProductsList(submitQuery, context.apiKey, data.productType ? data.productType.toString() : "");
-      result = result && result.products ? result.products.filter(item => item.carrierId === data.carrier) : []
+      let result = await ProductsList(submitQuery, context.apiKey, data.productType  || "", data.carrier || "");
+      result = result.filter(item => item.carrierId === data.carrier);
       setProductsList(result);
     }
 
@@ -373,7 +373,7 @@ export default function CreatePolicy({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createPolicy.errors;
             const resource = response.createPolicy.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setPolicies((policies ) => [...policies , resource]);
           }
         }}

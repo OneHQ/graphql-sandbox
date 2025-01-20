@@ -24,7 +24,6 @@ const createContract = `
       resource {
         id
         name
-        writingNumber
         carrier {
           id
           name
@@ -62,7 +61,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
-      result = result && result.productTypes ? result.productTypes.filter(el => el.productClassId === 1) : []
+      result = result.filter(el => el.productClassId === 1)
       setProductTypesList(result);
     }
 
@@ -110,7 +109,7 @@ export default function CreateContract({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createContract.errors;
             const resource = response.createContract.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setContracts((contracts) => [...contracts, resource]);
           }
         }}
@@ -118,8 +117,8 @@ export default function CreateContract({ children, onError, submitQuery }) {
       >
         {children}
         <TextField
-          name="writingNumber"
-          label="Writing Number"
+          name="name"
+          label="Name"
           onChange={handleChange}
           required
         />
@@ -190,7 +189,6 @@ export default function CreateContract({ children, onError, submitQuery }) {
           <TableHead>
             <TableRow>
               <TableCell>Link</TableCell>
-              <TableCell>Writing Number</TableCell>
               <TableCell>Advisor</TableCell>
               <TableCell>Carrier</TableCell>
               <TableCell>Product Type</TableCell>
@@ -207,9 +205,6 @@ export default function CreateContract({ children, onError, submitQuery }) {
                     >
                       {contract.name}
                     </Link>
-                  </TableCell>
-                  <TableCell>
-                    {contract.writingNumber}
                   </TableCell>
                   <TableCell>
                     {contract.advisor.name}

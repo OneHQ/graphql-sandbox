@@ -13,38 +13,40 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App"
 
 const fetchClients = `
-  query LastNClients($limit: Int!) {
-    clients(limit: $limit) {
-      id
-      addresses {
+  query LastNClients($first: Int!) {
+    clients(first: $first) {
+      nodes {
         id
-        lineOne
-        lineTwo
-        city
-        state {
+        addresses {
           id
-          name
+          lineOne
+          lineTwo
+          city
+          state {
+            id
+            name
+          }
+          zipcode
         }
-        zipcode
-      }
-      demographic {
-        firstName
-        lastName
-      }
-      emails {
-        address
-      }
-      fieldAttributes {
-        id
-        value
-        field {
+        demographic {
+          firstName
+          lastName
+        }
+        emails {
+          address
+        }
+        fieldAttributes {
           id
-          name
-          style
+          value
+          field {
+            id
+            name
+            style
+          }
         }
-      }
-      phones {
-        number
+        phones {
+          number
+        }
       }
     }
   }
@@ -66,9 +68,9 @@ export default function LastNClients({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchClients, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setClients(response.clients);
+          if (response) setClients(response.clients.nodes);
         }}
         submitText={
           data.limit

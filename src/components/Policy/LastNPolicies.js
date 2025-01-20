@@ -13,38 +13,40 @@ import TextField from "../../TextField";
 import { GraphqlContext } from "../../App";
 
 const fetchPolicies = `
-  query LastNPolicies($limit: Int!) {
-    policies(limit: $limit) {
-      id
-      name
-      type
-      policyNumber
-      policyStatus
-      signedDate
-      advisors {
+  query LastNPolicies($first: Int!) {
+    policies(first: $first) {
+      nodes {
         id
         name
-      }
-      clients {
-        id
-        name
-      }
-      carrier {
-        id
-        name
-      }
-      productType {
-        id
-        name
-      }
-      product {
-        id
-        name
-      }
-      state {
-        id
-        name
-        abbreviation
+        type
+        policyNumber
+        policyStatus
+        signedDate
+        advisors {
+          id
+          name
+        }
+        clients {
+          id
+          name
+        }
+        carrier {
+          id
+          name
+        }
+        productType {
+          id
+          name
+        }
+        product {
+          id
+          name
+        }
+        state {
+          id
+          name
+          abbreviation
+        }
       }
     }
   }
@@ -65,9 +67,9 @@ export default function LastNPolicies({ children, submitQuery }) {
       <Form
         onSubmit={async () => {
           const response = await submitQuery(fetchPolicies, {
-            variables: { limit: parseInt(data.limit, 10) }
+            variables: { first: parseInt(data.limit, 10) }
           });
-          if (response) setPolicies(response.policies);
+          if (response) setPolicies(response.policies.nodes);
         }}
         submitText={
           data.limit

@@ -73,9 +73,13 @@ export default function App() {
     setType ("query")
   }, [resource]);
 
+  useEffect(() => {
+    setError(error);
+  }, [error]);
+
   const classes = useStyles();
 
-  const onError = () => setError("Something went wrong");
+  const onError = (error) => setError(error);
 
   const renderApiField = (
     <TextField

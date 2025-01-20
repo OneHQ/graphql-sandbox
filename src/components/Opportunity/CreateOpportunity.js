@@ -38,10 +38,7 @@ const createOpportunity = `
           id
           name
         }
-        opportunityType {
-          id
-          name
-        }
+        opportunityType
         policyHolders {
           id
           client {
@@ -100,7 +97,7 @@ const policyHolderTypeGroups = {
 export default function CreateOpportunity({ children, onError, submitQuery }) {
   const context = React.useContext(GraphqlContext);
   const [opportunities, setOpportunities] = useState([]);
-  const [data, setData] = useState({opportunityStatus: "Open", opportunityType: "OpportunityType::::Quote", policyHolderType: ""});
+  const [data, setData] = useState({opportunityStatus: "Open", opportunityType: "Quote", policyHolderType: ""});
   const [options, setOptions] = useState({
     policyHolder: false,
     policyHolderConType: "Client",
@@ -130,17 +127,17 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       let result = await ProductTypesList(submitQuery, context.apiKey);
-      result = result && result.productTypes ? result.productTypes.filter(el => el.productClassId === 1) : []
+      result = result.filter(el => el.productClassId === 1)
       setProductTypesList(result);
 
       result = await OptionsList(submitQuery, context.apiKey, "OpportunityStatus");
-      setOpportunityStatusList(result && result.options ? result.options : []);
+      setOpportunityStatusList(result);
 
       result = await OptionsList(submitQuery, context.apiKey, "OpportunityType");
-      setOpportunityTypeList(result && result.options ? result.options : []);
+      setOpportunityTypeList(result);
 
       result = await OptionsList(submitQuery, context.apiKey, "PolicyHolderType");
-      setPolicyHolderTypeList(result && result.options ? result.options : []);
+      setPolicyHolderTypeList(result);
     }
 
     debounceFetch(fetchData);
@@ -249,7 +246,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
           name= "opportunityType"
           >
           {opportunityTypeList.map(item => (
-            <MenuItem key={item.id} value={item.id}>{item.name}</MenuItem>
+            <MenuItem key={item.id} value={item.name}>{item.name}</MenuItem>
           ))}
           </Select>
           </FormControl>
@@ -433,7 +430,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
             amount: parseFloat(data.amount),
             productTypeId: data.productType,
             opportunityStatus: data.opportunityStatus,
-            opportunityTypeId: data.opportunityType,
+            opportunityType: data.opportunityType,
           };
 
           if (options.policyHolder && data.policyHolderConnection) {
@@ -508,7 +505,7 @@ export default function CreateOpportunity({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createOpportunity.errors;
             const resource = response.createOpportunity.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setOpportunities((opportunities) => [...opportunities, resource]);
           }
         }}

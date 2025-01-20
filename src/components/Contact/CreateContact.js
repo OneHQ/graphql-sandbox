@@ -64,7 +64,7 @@ export default function CreateContact({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       const result = await StatesList(submitQuery, context.apiKey);
-      setStatesList(result && result.states ? result.states : [])
+      setStatesList(result)
     }
 
     debounceFetch(fetchData);
@@ -112,7 +112,7 @@ export default function CreateContact({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createContact.errors;
             const resource = response.createContact.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setContacts((contacts) => [...contacts, resource]);
           }
         }}

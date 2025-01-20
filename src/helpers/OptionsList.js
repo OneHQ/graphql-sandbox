@@ -2,8 +2,10 @@ const fetchOptions = (type) => (
   `
   query optionsList {
     options(type: "${type}") {
-      id
-      name
+      nodes {
+        id
+        name
+      }
     }
   }
   `
@@ -15,7 +17,7 @@ export default async function OptionsList(submitQuery, apiKey, type) {
   if(apiKey) {
     try {
       const result = await submitQuery(fetchOptions(type), {});
-      return result
+      return result.options?.nodes || []
     } catch (error) {
       console.log(error);
     }

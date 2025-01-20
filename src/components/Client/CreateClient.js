@@ -88,10 +88,10 @@ export default function CreateClient({ children, onError, submitQuery }) {
   useEffect(() => {
     async function fetchData(){
       let result = await StatesList(submitQuery, context.apiKey);
-      setStatesList(result && result.states ? result.states : [])
+      setStatesList(result)
 
       result = await FieldsList(submitQuery, context.apiKey, "Client");
-      setFieldsList(result && result.fields ? result.fields : [])
+      setFieldsList(result)
     }
 
     debounceFetch(fetchData);
@@ -171,7 +171,7 @@ export default function CreateClient({ children, onError, submitQuery }) {
           if (response) {
             const errors = response.createClient.errors;
             const resource = response.createClient.resource;
-            if (errors && Object.keys(errors).length) onError();
+            if (errors && Object.keys(errors).length) onError(Object.values(errors).join("; "));
             if (resource) setClients((clients) => [...clients, resource]);
           }
         }}
